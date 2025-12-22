@@ -232,7 +232,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Settings methods
     const completeOnboarding = useCallback(() => {
         setHasCompletedOnboarding(true);
-        localStorage.setItem(STORAGE_KEYS.ONBOARDING_COMPLETED, 'true');
+        localStorage.setItem(STORAGE_KEYS.ONBOARDING_COMPLETED, JSON.stringify(true));
     }, []);
 
     // ============================================

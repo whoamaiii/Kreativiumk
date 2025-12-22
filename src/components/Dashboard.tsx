@@ -33,7 +33,7 @@ export const Dashboard: React.FC = () => {
     const todaysLogs = logs.filter(log => new Date(log.timestamp) >= startOfDay);
 
     // Calculate latest energy
-    const latestLog = todaysLogs.length > 0 ? todaysLogs[todaysLogs.length - 1] : null;
+    const latestLog = todaysLogs.length > 0 ? todaysLogs[0] : null;
     const currentEnergy = latestLog ? latestLog.energy : 10; // Default to full battery
 
     // Track if deep analysis is running

@@ -107,7 +107,7 @@ export const calculateRiskForecast = (logs: LogEntry[]): RiskForecast => {
     if (upcomingRiskHours.length > 0) {
         const peak = upcomingRiskHours.reduce((max, curr) => curr.count > max.count ? curr : max);
         const peakNextHour = (peak.hour + 1) % 24;
-        predictedHighArousalTime = `${peak.hour}:00 - ${peakNextHour}:00`;
+        predictedHighArousalTime = `${peak.hour.toString().padStart(2, '0')}:00 - ${peakNextHour.toString().padStart(2, '0')}:00`;
     }
 
     return {
