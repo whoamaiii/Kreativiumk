@@ -29,6 +29,8 @@ export const GoalTracking: React.FC = () => {
     const overallProgress = getOverallProgress();
 
     const getStatusColor = (goal: Goal) => {
+        if (goal.targetValue === 0) return 'bg-slate-500';
+
         const progress = goal.targetDirection === 'decrease'
             ? Math.max(0, (goal.targetValue - goal.currentValue) / goal.targetValue * 100)
             : Math.min(100, (goal.currentValue / goal.targetValue) * 100);

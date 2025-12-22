@@ -95,14 +95,14 @@ export const BehaviorInsights: React.FC = () => {
     // Filter logs by date range
     const filteredLogs = useMemo(() => {
         const now = new Date();
-        const daysAgo = parseInt(dateRange);
+        const daysAgo = parseInt(dateRange, 10);
         const startDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
         return logs.filter(log => new Date(log.timestamp) >= startDate);
     }, [logs, dateRange]);
 
     const filteredCrisis = useMemo(() => {
         const now = new Date();
-        const daysAgo = parseInt(dateRange);
+        const daysAgo = parseInt(dateRange, 10);
         const startDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
         return crisisEvents.filter(event => new Date(event.timestamp) >= startDate);
     }, [crisisEvents, dateRange]);
@@ -275,7 +275,7 @@ export const BehaviorInsights: React.FC = () => {
                                         <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
                                     </span>
                                     <span className="text-[10px] uppercase font-bold text-indigo-300 tracking-wider">
-                                        {analysis.modelUsed ? analysis.modelUsed.split('/')[1] : 'Deep Analysis'}
+                                        {analysis.modelUsed?.split('/')[1] ?? 'Deep Analysis'}
                                     </span>
                                 </div>
                             )}

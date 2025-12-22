@@ -43,13 +43,23 @@ export interface ExportedData {
 
 const EXPORT_VERSION = '1.0.0';
 
+// Safe JSON parse helper to handle corrupted localStorage data
+function safeJsonParse<T>(key: string, fallback: T): T {
+    try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : fallback;
+    } catch {
+        return fallback;
+    }
+}
+
 export function exportAllData(): ExportedData {
-    const logs: LogEntry[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS) || '[]');
-    const crisisEvents: CrisisEvent[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.CRISIS_EVENTS) || '[]');
-    const scheduleEntries: ScheduleEntry[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SCHEDULE_ENTRIES) || '[]');
-    const scheduleTemplates: DailyScheduleTemplate[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SCHEDULE_TEMPLATES) || '[]');
-    const goals: Goal[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
-    const childProfile: ChildProfile | null = JSON.parse(localStorage.getItem(STORAGE_KEYS.CHILD_PROFILE) || 'null');
+    const logs: LogEntry[] = safeJsonParse(STORAGE_KEYS.LOGS, []);
+    const crisisEvents: CrisisEvent[] = safeJsonParse(STORAGE_KEYS.CRISIS_EVENTS, []);
+    const scheduleEntries: ScheduleEntry[] = safeJsonParse(STORAGE_KEYS.SCHEDULE_ENTRIES, []);
+    const scheduleTemplates: DailyScheduleTemplate[] = safeJsonParse(STORAGE_KEYS.SCHEDULE_TEMPLATES, []);
+    const goals: Goal[] = safeJsonParse(STORAGE_KEYS.GOALS, []);
+    const childProfile: ChildProfile | null = safeJsonParse(STORAGE_KEYS.CHILD_PROFILE, null);
 
     // Calculate date range
     const allDates = [
@@ -76,6 +86,7 @@ export function exportAllData(): ExportedData {
 
     const goalProgress = goals.length > 0
         ? Math.round(goals.reduce((sum, g) => {
+            if (g.targetValue === 0) return sum;
             const progress = g.targetDirection === 'decrease'
                 ? Math.max(0, (g.targetValue - g.currentValue) / g.targetValue * 100)
                 : Math.min(100, (g.currentValue / g.targetValue) * 100);
@@ -173,11 +184,11 @@ export function importData(jsonString: string, mergeMode: 'replace' | 'merge' = 
             }
         } else {
             // Merge mode - add new entries, skip duplicates by ID
-            const existingLogs: LogEntry[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.LOGS) || '[]');
-            const existingCrisis: CrisisEvent[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.CRISIS_EVENTS) || '[]');
-            const existingSchedule: ScheduleEntry[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SCHEDULE_ENTRIES) || '[]');
-            const existingTemplates: DailyScheduleTemplate[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.SCHEDULE_TEMPLATES) || '[]');
-            const existingGoals: Goal[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.GOALS) || '[]');
+            const existingLogs: LogEntry[] = safeJsonParse(STORAGE_KEYS.LOGS, []);
+            const existingCrisis: CrisisEvent[] = safeJsonParse(STORAGE_KEYS.CRISIS_EVENTS, []);
+            const existingSchedule: ScheduleEntry[] = safeJsonParse(STORAGE_KEYS.SCHEDULE_ENTRIES, []);
+            const existingTemplates: DailyScheduleTemplate[] = safeJsonParse(STORAGE_KEYS.SCHEDULE_TEMPLATES, []);
+            const existingGoals: Goal[] = safeJsonParse(STORAGE_KEYS.GOALS, []);
 
             const existingLogIds = new Set(existingLogs.map(l => l.id));
             const existingCrisisIds = new Set(existingCrisis.map(c => c.id));

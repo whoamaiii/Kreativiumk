@@ -5,7 +5,7 @@ export type RiskLevel = 'low' | 'moderate' | 'high';
 
 export interface RiskFactor {
     key: string;
-    params?: Record<string, any>;
+    params?: Record<string, string | number | boolean>;
 }
 
 export interface RiskForecast {

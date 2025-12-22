@@ -419,6 +419,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const getOverallProgress = useCallback(() => {
         if (goals.length === 0) return 0;
         const totalProgress = goals.reduce((sum, g) => {
+            if (g.targetValue === 0) return sum;
             const progress = g.targetDirection === 'decrease'
                 ? Math.max(0, (g.targetValue - g.currentValue) / g.targetValue * 100)
                 : Math.min(100, (g.currentValue / g.targetValue) * 100);
