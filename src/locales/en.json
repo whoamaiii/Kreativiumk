@@ -518,5 +518,35 @@
                 "weak": "Weak"
             }
         }
+    },
+    "sensoryProfile": {
+        "title": "Sensory Profile",
+        "goBack": "Go back",
+        "radar": "Radar",
+        "activePatterns": "Active Patterns",
+        "noData": "No Data",
+        "patternInsights": "Pattern Insights",
+        "chartDescription": "Radar chart showing sensory sensitivity across six categories",
+        "today": "Today",
+        "thisWeek": "This Week",
+        "thisMonth": "This Month",
+        "noDataForPeriod": "No data recorded for this period.",
+        "logEventsHint": "Log events with sensory triggers to see insights here.",
+        "axes": {
+            "visual": "Visual",
+            "auditory": "Auditory",
+            "tactile": "Tactile",
+            "vestibular": "Vestibular",
+            "interoception": "Interoception",
+            "chemical": "Chemical"
+        },
+        "insights": {
+            "mostFrequent": "Most Frequent Trigger",
+            "mostFrequentText": "{{trigger}} occurs in {{percentage}}% of logs.",
+            "highStress": "High Stress Link",
+            "highStressText": "{{trigger}} is present in {{percentage}}% of high arousal cases.",
+            "logMoreData": "Log More Data",
+            "logMoreDataText": "More data needed to identify clear sensory patterns."
+        }
     }
 }

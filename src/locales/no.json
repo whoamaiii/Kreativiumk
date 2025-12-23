@@ -518,5 +518,35 @@
                 "weak": "Svak"
             }
         }
+    },
+    "sensoryProfile": {
+        "title": "Sensorisk Profil",
+        "goBack": "Gå tilbake",
+        "radar": "Radar",
+        "activePatterns": "Aktive Mønstre",
+        "noData": "Ingen Data",
+        "patternInsights": "Mønsterinnsikt",
+        "chartDescription": "Radardiagram som viser sensorisk følsomhet på tvers av seks kategorier",
+        "today": "I Dag",
+        "thisWeek": "Denne Uken",
+        "thisMonth": "Denne Måneden",
+        "noDataForPeriod": "Ingen data registrert for denne perioden.",
+        "logEventsHint": "Logg hendelser med sensoriske triggere for å se innsikt her.",
+        "axes": {
+            "visual": "Visuell",
+            "auditory": "Auditiv",
+            "tactile": "Taktil",
+            "vestibular": "Vestibulær",
+            "interoception": "Interosepsjon",
+            "chemical": "Kjemisk"
+        },
+        "insights": {
+            "mostFrequent": "Hyppigste Trigger",
+            "mostFrequentText": "{{trigger}} forekommer i {{percentage}}% av loggene.",
+            "highStress": "Høy Stress-kobling",
+            "highStressText": "{{trigger}} er tilstede i {{percentage}}% av tilfeller med høy arousal.",
+            "logMoreData": "Logg Mer Data",
+            "logMoreDataText": "Mer data trengs for å identifisere tydelige sensoriske mønstre."
+        }
     }
 }

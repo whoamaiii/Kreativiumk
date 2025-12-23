@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useLogs } from '../store';
 import {
     ArrowLeft,
@@ -12,10 +13,63 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+// Constants for hexagon chart
+const NUM_AXES = 6;
+const CENTER = 150;
+const RADIUS = 100;
+const LABEL_RADIUS = 125;
+
+// Map trigger keys to axis translation keys
+const AXIS_CONFIG = [
+    { key: 'visual', triggers: ['Visuell', 'Lys'] },
+    { key: 'auditory', triggers: ['Auditiv'] },
+    { key: 'tactile', triggers: ['Taktil', 'Temperatur', 'Trengsel'] },
+    { key: 'vestibular', triggers: ['Vestibulær'] },
+    { key: 'interoception', triggers: ['Interosepsjon', 'Sult', 'Tørst'] },
+    { key: 'chemical', triggers: ['Lukt', 'Smak'] }
+];
+
+// Calculate position on hexagon at given index
+const getHexagonPoint = (index: number, radius: number): { x: number; y: number } => {
+    const angle = (2 * Math.PI * index) / NUM_AXES - Math.PI / 2;
+    return {
+        x: CENTER + Math.cos(angle) * radius,
+        y: CENTER + Math.sin(angle) * radius
+    };
+};
+
+// Generate hexagon polygon points at given scale
+const getHexagonPoints = (scale: number): string => {
+    return Array.from({ length: NUM_AXES }, (_, i) => {
+        const { x, y } = getHexagonPoint(i, RADIUS * scale);
+        return `${x},${y}`;
+    }).join(' ');
+};
+
+// Get text-anchor based on position angle
+const getTextAnchor = (index: number): 'start' | 'middle' | 'end' => {
+    const angle = (2 * Math.PI * index) / NUM_AXES - Math.PI / 2;
+    const x = Math.cos(angle);
+    if (Math.abs(x) < 0.1) return 'middle'; // top or bottom
+    return x > 0 ? 'start' : 'end';
+};
+
+// Get vertical alignment offset
+const getDominantBaseline = (index: number): 'hanging' | 'middle' | 'auto' => {
+    const angle = (2 * Math.PI * index) / NUM_AXES - Math.PI / 2;
+    const y = Math.sin(angle);
+    if (y < -0.5) return 'auto'; // top
+    if (y > 0.5) return 'hanging'; // bottom
+    return 'middle';
+};
+
 export const SensoryProfile: React.FC = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const { logs } = useLogs();
     const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('month');
+    const chartTitleId = useId();
+    const chartDescId = useId();
 
     // Filter logs based on time range
     const filteredLogs = useMemo(() => {
@@ -56,40 +110,32 @@ export const SensoryProfile: React.FC = () => {
         };
     }, [filteredLogs]);
 
-    // Format data for Radar Chart
+    // Format data for Radar Chart (hexagon)
     const chartData = useMemo(() => {
-        if (!stats) return { points: "150,150 150,150 150,150 150,150 150,150", values: {} };
+        // Return empty state indicator when no data
+        if (!stats || Object.keys(stats.triggerCounts).length === 0) {
+            return { isEmpty: true, points: '', coordinates: [], maxCount: 0 };
+        }
 
-        // Map specific Norwegian triggers to chart axes
-        const axes = [
-            { id: 'Visuell', triggers: ['Visuell', 'Lys'] },
-            { id: 'Auditiv', triggers: ['Auditiv'] },
-            { id: 'Taktil', triggers: ['Taktil', 'Temperatur'] },
-            { id: 'Vestibulær', triggers: ['Vestibulær'] },
-            { id: 'Interosepsjon', triggers: ['Interosepsjon', 'Sult', 'Tørst'] }
-        ];
+        const maxCount = Math.max(...Object.values(stats.triggerCounts), 5);
 
-        const center = 150;
-        const radius = 100; // max radius
-        const maxCount = Math.max(...Object.values(stats.triggerCounts), 5); // Avoid division by zero, min scale 5
-
-        const coordinates = axes.map((axis, i) => {
-            const angle = (Math.PI * 2 * i) / 5 - (Math.PI / 2); // Start at top
+        const coordinates = AXIS_CONFIG.map((axis, i) => {
+            const angle = (Math.PI * 2 * i) / NUM_AXES - (Math.PI / 2);
 
             // Sum counts for triggers in this axis category
-            const count = axis.triggers.reduce((sum, t) => sum + (stats.triggerCounts[t as string] || 0), 0);
-            const normalizedValue = Math.min((count / maxCount), 1); // Cap at 1.0
-            const distance = normalizedValue * radius;
+            const count = axis.triggers.reduce((sum, trigger) => sum + (stats.triggerCounts[trigger] || 0), 0);
+            const normalizedValue = Math.min((count / maxCount), 1);
+            const distance = normalizedValue * RADIUS;
 
-            const x = center + Math.cos(angle) * distance;
-            const y = center + Math.sin(angle) * distance;
+            const x = CENTER + Math.cos(angle) * distance;
+            const y = CENTER + Math.sin(angle) * distance;
 
-            return { x, y, value: count, label: axis.id };
+            return { x, y, value: count, axisKey: axis.key };
         });
 
         const points = coordinates.map(c => `${c.x},${c.y}`).join(' ');
 
-        return { points, coordinates, maxCount };
+        return { isEmpty: false, points, coordinates, maxCount };
     }, [stats]);
 
     // Derive Insights
@@ -103,10 +149,11 @@ export const SensoryProfile: React.FC = () => {
             .sort(([, a], [, b]) => b - a)[0];
 
         if (topTrigger) {
+            const percentage = Math.round(topTrigger[1] / stats.totalLogs * 100);
             result.push({
                 icon: <Eye size={24} />,
-                title: 'Hyppigste Trigger',
-                text: `${topTrigger[0]} forekommer i ${Math.round(topTrigger[1] / stats.totalLogs * 100)}% av loggene.`,
+                title: t('sensoryProfile.insights.mostFrequent'),
+                text: t('sensoryProfile.insights.mostFrequentText', { trigger: topTrigger[0], percentage }),
                 color: 'text-primary',
                 bg: 'bg-primary/20',
                 ring: 'ring-primary/30'
@@ -119,11 +166,11 @@ export const SensoryProfile: React.FC = () => {
 
         if (topCorrelation && stats.highArousalLogs > 0) {
             const percentage = Math.round(topCorrelation[1] / stats.highArousalLogs * 100);
-            if (percentage > 50) { // Only show if significant
+            if (percentage > 50) {
                 result.push({
                     icon: <AlertTriangle size={24} />,
-                    title: 'Høy Stress-kobling',
-                    text: `${topCorrelation[0]} er tilstede i ${percentage}% av tilfeller med høy arousal.`,
+                    title: t('sensoryProfile.insights.highStress'),
+                    text: t('sensoryProfile.insights.highStressText', { trigger: topCorrelation[0], percentage }),
                     color: 'text-orange-400',
                     bg: 'bg-orange-500/20',
                     ring: 'ring-orange-500/30'
@@ -135,8 +182,8 @@ export const SensoryProfile: React.FC = () => {
         if (result.length < 2) {
             result.push({
                 icon: <Info size={24} />,
-                title: 'Logg Mer Data',
-                text: 'Mer data trengs for å identifisere tydelige sensoriske mønstre.',
+                title: t('sensoryProfile.insights.logMoreData'),
+                text: t('sensoryProfile.insights.logMoreDataText'),
                 color: 'text-blue-400',
                 bg: 'bg-blue-500/20',
                 ring: 'ring-blue-500/30'
@@ -144,7 +191,7 @@ export const SensoryProfile: React.FC = () => {
         }
 
         return result;
-    }, [stats]);
+    }, [stats, t]);
 
     return (
         <div className="flex flex-col gap-6 px-4 py-4 min-h-screen pb-24">
@@ -154,10 +201,16 @@ export const SensoryProfile: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="sticky top-0 z-10 flex items-center bg-background-dark/80 p-4 pb-2 backdrop-blur-sm justify-between rounded-b-xl -mx-4 -mt-4 mb-2 border-b border-white/10"
             >
-                <button onClick={() => navigate(-1)} className="flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-white/10 transition-colors text-white" aria-label="Gå tilbake">
+                <button
+                    onClick={() => navigate(-1)}
+                    className="flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-white/10 transition-colors text-white"
+                    aria-label={t('sensoryProfile.goBack')}
+                >
                     <ArrowLeft size={20} />
                 </button>
-                <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">Sensorisk Profil</h2>
+                <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">
+                    {t('sensoryProfile.title')}
+                </h2>
                 <div className="size-10"></div>
             </motion.div>
 
@@ -168,15 +221,18 @@ export const SensoryProfile: React.FC = () => {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="flex gap-2"
+                    role="group"
+                    aria-label={t('sensoryProfile.title')}
                 >
                     {[
-                        { id: 'today', label: 'I Dag' },
-                        { id: 'week', label: 'Denne Uken' },
-                        { id: 'month', label: 'Denne Måneden' }
+                        { id: 'today', label: t('sensoryProfile.today') },
+                        { id: 'week', label: t('sensoryProfile.thisWeek') },
+                        { id: 'month', label: t('sensoryProfile.thisMonth') }
                     ].map(period => (
                         <button
                             key={period.id}
                             onClick={() => setTimeRange(period.id as 'today' | 'week' | 'month')}
+                            aria-pressed={timeRange === period.id}
                             className={`flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-xl px-4 text-sm font-bold transition-all
                                 ${timeRange === period.id
                                     ? 'bg-primary text-white shadow-lg shadow-primary/25'
@@ -197,47 +253,60 @@ export const SensoryProfile: React.FC = () => {
                     <div className="flex flex-col gap-1 mb-4">
                         <div className="flex items-center gap-2 text-primary mb-1">
                             <Activity size={18} />
-                            <span className="text-xs font-bold uppercase tracking-wider">Radar</span>
+                            <span className="text-xs font-bold uppercase tracking-wider">{t('sensoryProfile.radar')}</span>
                         </div>
                         <h2 className="text-white text-2xl font-bold">
-                            {stats ? 'Aktive Mønstre' : 'Ingen Data'}
+                            {stats ? t('sensoryProfile.activePatterns') : t('sensoryProfile.noData')}
                         </h2>
                     </div>
 
                     {/* Radar Chart SVG */}
-                    <div className="relative flex items-center justify-center min-h-[300px]">
-                        <svg className="absolute inset-0" height="100%" viewBox="0 0 300 300" width="100%">
-                            {/* Grid/Polygons */}
-                            {[50, 75, 100].map((r, i) => (
-                                <polygon
-                                    key={i}
-                                    fill="none"
-                                    points="150,50 235,112 202,212 97,212 64,112" // rough pentagon
-                                    stroke="rgba(255,255,255,0.1)"
-                                    strokeWidth="1"
-                                    transform={`scale(${r / 100})`}
-                                    style={{ transformOrigin: '150px 150px' }}
-                                />
-                            ))}
+                    <div className="relative flex items-center justify-center min-h-[300px]" aria-live="polite">
+                        <svg
+                            className="w-full h-full max-w-[300px] max-h-[300px]"
+                            viewBox="0 0 300 300"
+                            role="img"
+                            aria-labelledby={`${chartTitleId} ${chartDescId}`}
+                        >
+                            <title id={chartTitleId}>{t('sensoryProfile.radar')}</title>
+                            <desc id={chartDescId}>{t('sensoryProfile.chartDescription')}</desc>
 
-                            {/* Axis Lines */}
-                            {[0, 72, 144, 216, 288].map(deg => (
-                                <line
-                                    key={deg}
-                                    x1="150" y1="150"
-                                    x2={150 + 100 * Math.cos((deg - 90) * Math.PI / 180)}
-                                    y2={150 + 100 * Math.sin((deg - 90) * Math.PI / 180)}
-                                    stroke="rgba(255,255,255,0.1)"
-                                    strokeWidth="1"
-                                />
-                            ))}
+                            {/* Grid Hexagons (decorative) */}
+                            <g aria-hidden="true">
+                                {[0.5, 0.75, 1].map((scale, i) => (
+                                    <polygon
+                                        key={i}
+                                        fill="none"
+                                        points={getHexagonPoints(scale)}
+                                        stroke="rgba(255,255,255,0.1)"
+                                        strokeWidth="1"
+                                    />
+                                ))}
 
-                            {/* Data Polygon */}
-                            {stats && (
+                                {/* Axis Lines */}
+                                {Array.from({ length: NUM_AXES }, (_, i) => {
+                                    const { x, y } = getHexagonPoint(i, RADIUS);
+                                    return (
+                                        <line
+                                            key={i}
+                                            x1={CENTER}
+                                            y1={CENTER}
+                                            x2={x}
+                                            y2={y}
+                                            stroke="rgba(255,255,255,0.1)"
+                                            strokeWidth="1"
+                                        />
+                                    );
+                                })}
+                            </g>
+
+                            {/* Data Polygon - only render if we have data */}
+                            {!chartData.isEmpty && (
                                 <motion.polygon
                                     initial={{ opacity: 0, scale: 0 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     transition={{ duration: 1, type: "spring" }}
+                                    style={{ transformOrigin: `${CENTER}px ${CENTER}px` }}
                                     fill="rgba(43, 108, 238, 0.3)"
                                     points={chartData.points}
                                     stroke="#3b82f6"
@@ -247,25 +316,51 @@ export const SensoryProfile: React.FC = () => {
                             )}
 
                             {/* Data Points */}
-                            {chartData.coordinates?.map((c, i) => (
+                            {!chartData.isEmpty && chartData.coordinates.map((c, i) => (
                                 <motion.circle
                                     key={i}
                                     initial={{ r: 0 }}
                                     animate={{ r: 4 }}
                                     transition={{ delay: 0.5 + i * 0.1 }}
-                                    cx={c.x} cy={c.y}
+                                    cx={c.x}
+                                    cy={c.y}
                                     fill="#3b82f6"
-                                    stroke="white" strokeWidth="2"
+                                    stroke="white"
+                                    strokeWidth="2"
+                                    aria-label={`${t(`sensoryProfile.axes.${c.axisKey}`)}: ${c.value}`}
                                 />
                             ))}
+
+                            {/* Labels positioned dynamically */}
+                            {AXIS_CONFIG.map((axis, i) => {
+                                const { x, y } = getHexagonPoint(i, LABEL_RADIUS);
+                                return (
+                                    <text
+                                        key={axis.key}
+                                        x={x}
+                                        y={y}
+                                        textAnchor={getTextAnchor(i)}
+                                        dominantBaseline={getDominantBaseline(i)}
+                                        className="fill-white text-xs font-bold"
+                                        style={{
+                                            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))',
+                                            fontSize: '11px'
+                                        }}
+                                    >
+                                        {t(`sensoryProfile.axes.${axis.key}`)}
+                                    </text>
+                                );
+                            })}
                         </svg>
 
-                        {/* Labels (Manually positioned for Pentagon) */}
-                        <div className="absolute top-0 text-center -mt-4"><p className="text-white text-xs font-bold bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm">Visuell</p></div>
-                        <div className="absolute top-[30%] right-[-10px]"><p className="text-white text-xs font-bold bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm">Auditiv</p></div>
-                        <div className="absolute bottom-[10%] right-[5%]"><p className="text-white text-xs font-bold bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm">Taktil</p></div>
-                        <div className="absolute bottom-[10%] left-[5%]"><p className="text-white text-xs font-bold bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm">Vestibulær</p></div>
-                        <div className="absolute top-[30%] left-[-10px]"><p className="text-white text-xs font-bold bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm">Interosepsjon</p></div>
+                        {/* Empty state overlay */}
+                        {chartData.isEmpty && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <p className="text-slate-400 text-sm text-center px-8">
+                                    {t('sensoryProfile.noDataForPeriod')}
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </motion.div>
 
@@ -273,7 +368,7 @@ export const SensoryProfile: React.FC = () => {
                 <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-2 px-2 mt-2">
                         <Brain className="text-purple-400" size={20} />
-                        <h3 className="text-white text-lg font-bold">Mønsterinnsikt</h3>
+                        <h3 className="text-white text-lg font-bold">{t('sensoryProfile.patternInsights')}</h3>
                     </div>
 
                     {insights.length > 0 ? (
@@ -303,8 +398,8 @@ export const SensoryProfile: React.FC = () => {
                             >
                                 <Lightbulb size={32} className="opacity-50" />
                             </motion.div>
-                            <p className="font-medium">Ingen data registrert for denne perioden.</p>
-                            <p className="text-xs mt-1 text-slate-600">Logg hendelser med sensoriske triggere for å se innsikt her.</p>
+                            <p className="font-medium">{t('sensoryProfile.noDataForPeriod')}</p>
+                            <p className="text-xs mt-1 text-slate-600">{t('sensoryProfile.logEventsHint')}</p>
                         </div>
                     )}
                 </div>
