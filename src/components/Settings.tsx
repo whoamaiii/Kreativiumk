@@ -324,7 +324,7 @@ export const Settings: React.FC = () => {
                     </div>
                     <p className="text-xs text-slate-500 mb-3">{t('settings.sensoryChallenges.subtitle')}</p>
                     <ChipSelect
-                        options={SENSORY_TRIGGERS.map(t => ({ value: t, label: t }))}
+                        options={SENSORY_TRIGGERS.map(trigger => ({ value: trigger, label: trigger }))}
                         selected={sensorySensitivities}
                         onChange={setPrimarySensitivities}
                         maxSelect={5}
@@ -339,7 +339,7 @@ export const Settings: React.FC = () => {
                     </div>
                     <p className="text-xs text-slate-500 mb-3">{t('settings.sensorySeeking.subtitle')}</p>
                     <ChipSelect
-                        options={SENSORY_TRIGGERS.map(t => ({ value: t, label: t }))}
+                        options={SENSORY_TRIGGERS.map(trigger => ({ value: trigger, label: trigger }))}
                         selected={seekingSensory}
                         onChange={setSeekingSensory}
                         maxSelect={5}

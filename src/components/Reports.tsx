@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Download, Calendar, Check, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useLogs, useCrisis, useChildProfile } from '../store';
@@ -21,6 +21,15 @@ export const Reports: React.FC = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isGenerated, setIsGenerated] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Track mounted state for async operations
+    const isMountedRef = useRef(true);
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
 
     // Filter data based on selection
     const { filteredLogs, filteredCrisis, startDate } = useMemo(() => {
@@ -56,7 +65,7 @@ export const Reports: React.FC = () => {
         // Find top trigger
         const triggers: Record<string, number> = {};
         filteredLogs.forEach(l => {
-            [...l.sensoryTriggers, ...l.contextTriggers].forEach(t => triggers[t] = (triggers[t] || 0) + 1);
+            [...l.sensoryTriggers, ...l.contextTriggers].forEach(trigger => triggers[trigger] = (triggers[trigger] || 0) + 1);
         });
         const topTrigger = Object.entries(triggers).sort((a, b) => b[1] - a[1])[0]?.[0] || t('reports.noData');
 
@@ -108,15 +117,25 @@ export const Reports: React.FC = () => {
                 endDate: new Date()
             });
 
-            setIsGenerated(true);
-            setTimeout(() => setIsGenerated(false), 5000); // Reset success state after 5s
+            if (isMountedRef.current) {
+                setIsGenerated(true);
+                setTimeout(() => {
+                    if (isMountedRef.current) {
+                        setIsGenerated(false);
+                    }
+                }, 5000); // Reset success state after 5s
+            }
         } catch (e) {
             if (import.meta.env.DEV) {
                 console.error(e);
             }
-            setError(t('reports.error.failed'));
+            if (isMountedRef.current) {
+                setError(t('reports.error.failed'));
+            }
         } finally {
-            setIsGenerating(false);
+            if (isMountedRef.current) {
+                setIsGenerating(false);
+            }
         }
     };
 

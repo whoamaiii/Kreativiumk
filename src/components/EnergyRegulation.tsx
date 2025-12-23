@@ -44,11 +44,11 @@ export const EnergyRegulation: React.FC = () => {
         return { spoons, energy: latest.energy, trend };
     }, [todayLogs]);
 
-    // Format data for chart
-    const chartData = todayLogs.map(log => ({
+    // Format data for chart - memoized to prevent unnecessary recalculations
+    const chartData = useMemo(() => todayLogs.map(log => ({
         time: format(new Date(log.timestamp), 'HH:mm'),
         energy: log.energy
-    }));
+    })), [todayLogs]);
 
     return (
         <div className="flex flex-col gap-6 px-4 py-4 min-h-screen pb-24">

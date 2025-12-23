@@ -101,9 +101,24 @@ export function exportAllData(): ExportedData {
     const goalProgress = goals.length > 0
         ? Math.round(goals.reduce((sum, g) => {
             if (g.targetValue === 0) return sum;
-            const progress = g.targetDirection === 'decrease'
-                ? Math.max(0, (g.targetValue - g.currentValue) / g.targetValue * 100)
-                : Math.min(100, (g.currentValue / g.targetValue) * 100);
+            let progress: number;
+            if (g.targetDirection === 'decrease') {
+                // For decrease goals, use first progress entry as baseline
+                const baseline = g.progressHistory.length > 0
+                    ? g.progressHistory[0].value
+                    : g.currentValue;
+                const range = baseline - g.targetValue;
+                // If currentValue at or below target, 100% progress
+                if (g.currentValue <= g.targetValue) {
+                    progress = 100;
+                } else if (range <= 0) {
+                    progress = 0;
+                } else {
+                    progress = Math.min(100, Math.max(0, (baseline - g.currentValue) / range * 100));
+                }
+            } else {
+                progress = Math.min(100, (g.currentValue / g.targetValue) * 100);
+            }
             return sum + progress;
         }, 0) / goals.length)
         : 0;

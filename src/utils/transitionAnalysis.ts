@@ -35,8 +35,8 @@ export const calculateTransitionStats = (entries: ScheduleEntry[]): TransitionAn
         };
     }
 
-    // Sort by date ascending
-    validEntries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // Sort by date ascending (create a copy to avoid mutating input)
+    const sortedEntries = [...validEntries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     // Group by activity
     const activityGroups = new Map<string, { totalDiff: number; count: number; history: { date: string; difficulty: number }[] }>();
@@ -44,7 +44,7 @@ export const calculateTransitionStats = (entries: ScheduleEntry[]): TransitionAn
 
     let totalGlobalDifficulty = 0;
 
-    validEntries.forEach(entry => {
+    sortedEntries.forEach(entry => {
         const diff = entry.transitionDifficulty || 0;
         totalGlobalDifficulty += diff;
         const name = entry.activity.title;
@@ -110,14 +110,14 @@ export const calculateTransitionStats = (entries: ScheduleEntry[]): TransitionAn
     transitionStats.sort((a, b) => b.avgDifficulty - a.avgDifficulty);
 
     // Recent global difficulties (for main chart)
-    const recentDifficulties = validEntries.slice(-14).map(e => ({ // Last 14 entries
+    const recentDifficulties = sortedEntries.slice(-14).map(e => ({ // Last 14 entries
         date: e.date,
         difficulty: e.transitionDifficulty || 0
     }));
 
     return {
-        overallAvgDifficulty: parseFloat((totalGlobalDifficulty / validEntries.length).toFixed(1)),
-        totalTransitions: validEntries.length,
+        overallAvgDifficulty: parseFloat((totalGlobalDifficulty / sortedEntries.length).toFixed(1)),
+        totalTransitions: sortedEntries.length,
         hardestTransitions: transitionStats.slice(0, 5),
         easiestTransitions: [...transitionStats].sort((a, b) => a.avgDifficulty - b.avgDifficulty).slice(0, 5),
         effectiveSupports: effectiveSupports.slice(0, 5),

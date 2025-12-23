@@ -414,7 +414,9 @@ export const NewActivityModal: React.FC<NewActivityModalProps> = ({
     }, [isOpen, editActivity]);
 
     const calculateEndTime = (start: string, mins: number) => {
-        const [h = 0, m = 0] = (start || '00:00').split(':').map(Number);
+        const parts = (start || '00:00').split(':');
+        const h = parseInt(parts[0] || '0', 10) || 0;
+        const m = parseInt(parts[1] || '0', 10) || 0;
         const totalMins = h * 60 + m + mins;
         const endH = Math.floor(totalMins / 60) % 24;
         const endM = totalMins % 60;
@@ -754,9 +756,10 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={onConfirm}
-                                className="flex-1 px-4 py-3 rounded-xl text-white font-bold neon-glow-green"
+                                className="flex-1 px-4 py-3 rounded-xl text-white font-bold"
                                 style={{
-                                    background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
+                                    background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+                                    boxShadow: '0 0 20px rgba(239, 68, 68, 0.4)'
                                 }}
                             >
                                 {t('visualSchedule.modal.delete')}

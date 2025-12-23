@@ -178,7 +178,7 @@ export const generatePDF = (
         const crisisData = crisisEvents.map(event => [
             format(new Date(event.timestamp), 'dd.MM HH:mm'),
             event.type,
-            `${event.durationSeconds / 60} min`,
+            `${Math.round(event.durationSeconds / 60)} min`,
             event.peakIntensity.toString(),
             event.hasAudioRecording ? 'Ja' : 'Nei',
             event.sensoryTriggers.join(', ') || '-',

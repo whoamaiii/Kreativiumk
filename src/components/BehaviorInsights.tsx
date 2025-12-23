@@ -105,12 +105,24 @@ export const BehaviorInsights: React.FC = () => {
         const now = new Date();
         const daysAgo = parseInt(dateRange, 10);
         const startDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-        return crisisEvents.filter(event => new Date(event.timestamp) >= startDate);
+        return crisisEvents
+            .filter(event => new Date(event.timestamp) >= startDate)
+            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     }, [crisisEvents, dateRange]);
 
     // Calculate derived data
     const strategyData = useMemo(() => calculateStrategyEffectiveness(filteredLogs), [filteredLogs]);
     const heatmapData = useMemo(() => buildHeatmapData(filteredLogs), [filteredLogs]);
+
+    // Track mounted state for async operations
+    const isMountedRef = React.useRef(true);
+
+    React.useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
 
     // Run analysis
     const runAnalysis = useCallback(async (forceRefresh = false) => {
@@ -126,14 +138,21 @@ export const BehaviorInsights: React.FC = () => {
                 forceRefresh,
                 childProfile
             });
-            setAnalysis(result);
+            // Only update state if component is still mounted
+            if (isMountedRef.current) {
+                setAnalysis(result);
+            }
         } catch (error) {
             if (import.meta.env.DEV) {
                 console.error('Analysis failed:', error);
             }
-            setAnalysis(null);
+            if (isMountedRef.current) {
+                setAnalysis(null);
+            }
         } finally {
-            setIsAnalyzing(false);
+            if (isMountedRef.current) {
+                setIsAnalyzing(false);
+            }
         }
     }, [filteredLogs, filteredCrisis, childProfile]);
 
@@ -146,13 +165,18 @@ export const BehaviorInsights: React.FC = () => {
         setIsDeepAnalyzing(true);
         try {
             const result = await analyzeLogsDeep(filteredLogs, filteredCrisis, { childProfile });
-            setAnalysis(result);
+            // Only update state if component is still mounted
+            if (isMountedRef.current) {
+                setAnalysis(result);
+            }
         } catch (error) {
             if (import.meta.env.DEV) {
                 console.error('Deep analysis failed:', error);
             }
         } finally {
-            setIsDeepAnalyzing(false);
+            if (isMountedRef.current) {
+                setIsDeepAnalyzing(false);
+            }
         }
     }, [filteredLogs, filteredCrisis, childProfile]);
 

@@ -144,7 +144,7 @@ export const VisualSchedule: React.FC = () => {
         // Try to find a matching template
         const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date().getDay()];
         const matchingTemplate = scheduleTemplates.find(
-            t => t.context === currentContext && (t.dayOfWeek === dayOfWeek || t.dayOfWeek === 'all')
+            template => template.context === currentContext && (template.dayOfWeek === dayOfWeek || template.dayOfWeek === 'all')
         );
 
         if (matchingTemplate && matchingTemplate.activities.length > 0) {

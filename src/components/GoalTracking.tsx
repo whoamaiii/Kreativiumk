@@ -28,25 +28,35 @@ export const GoalTracking: React.FC = () => {
 
     const overallProgress = getOverallProgress();
 
-    const getStatusColor = (goal: Goal) => {
-        if (goal.targetValue <= 0) return 'bg-slate-500';
-
-        const progress = goal.targetDirection === 'decrease'
-            ? Math.max(0, (goal.targetValue - goal.currentValue) / goal.targetValue * 100)
-            : Math.min(100, (goal.currentValue / goal.targetValue) * 100);
-
-        if (progress >= 80) return 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]';
-        if (progress >= 50) return 'bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.5)]';
-        return 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]';
-    };
-
     const getProgressPercent = (goal: Goal) => {
         if (goal.targetValue <= 0) return 0;
 
         if (goal.targetDirection === 'decrease') {
-            return Math.max(0, Math.min(100, (goal.targetValue - goal.currentValue) / goal.targetValue * 100));
+            // For decrease goals, use first progress entry as baseline
+            // If no history, we can't calculate progress meaningfully
+            const baseline = goal.progressHistory.length > 0
+                ? goal.progressHistory[0].value
+                : goal.currentValue;
+            const range = baseline - goal.targetValue;
+
+            // If currentValue already at or below target, 100% progress
+            if (goal.currentValue <= goal.targetValue) return 100;
+            // If no valid range (baseline <= target), can't calculate progress
+            if (range <= 0) return 0;
+            // Calculate progress from baseline toward target
+            return Math.min(100, Math.max(0, (baseline - goal.currentValue) / range * 100));
         }
         return Math.min(100, (goal.currentValue / goal.targetValue) * 100);
+    };
+
+    const getStatusColor = (goal: Goal) => {
+        if (goal.targetValue <= 0) return 'bg-slate-500';
+
+        const progress = getProgressPercent(goal);
+
+        if (progress >= 80) return 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]';
+        if (progress >= 50) return 'bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.5)]';
+        return 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]';
     };
 
     const handleAddGoal = () => {
@@ -63,7 +73,7 @@ export const GoalTracking: React.FC = () => {
             startDate: new Date().toISOString(),
             targetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
             currentValue: 0,
-            status: 'in_progress' as GoalStatus,
+            status: 'not_started' as GoalStatus,
             progressHistory: []
         };
 
@@ -74,6 +84,7 @@ export const GoalTracking: React.FC = () => {
         setNewCategory('regulation');
         setNewTargetValue(10);
         setNewTargetUnit('ganger');
+        setNewTargetDirection('increase');
     };
 
     const handleLogProgress = (goalId: string) => {

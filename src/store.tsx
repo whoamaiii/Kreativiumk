@@ -220,7 +220,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const updateChildProfile = useCallback((updates: Partial<ChildProfile>) => {
         setChildProfileState(prev => {
-            if (!prev) return prev;
+            if (!prev) {
+                // If no profile exists, create a new one with the updates
+                const newProfile: ChildProfile = {
+                    id: crypto.randomUUID(),
+                    name: '',
+                    diagnoses: [],
+                    communicationStyle: 'verbal',
+                    sensorySensitivities: [],
+                    seekingSensory: [],
+                    effectiveStrategies: [],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    ...updates
+                };
+                localStorage.setItem(STORAGE_KEYS.CHILD_PROFILE, JSON.stringify(newProfile));
+                return newProfile;
+            }
             const updated = { ...prev, ...updates, updatedAt: new Date().toISOString() };
             localStorage.setItem(STORAGE_KEYS.CHILD_PROFILE, JSON.stringify(updated));
             return updated;
@@ -381,7 +397,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         ? Math.min(100, Math.max(0, (baseline - latestValue) / range * 100))
                         : (latestValue <= g.targetValue ? 100 : 0);
                 } else {
-                    progressPercent = Math.min(100, (latestValue / g.targetValue) * 100);
+                    // Guard against division by zero
+                    progressPercent = g.targetValue > 0
+                        ? Math.min(100, (latestValue / g.targetValue) * 100)
+                        : (latestValue > 0 ? 100 : 0);
                 }
 
                 const daysUntilDeadline = Math.ceil(

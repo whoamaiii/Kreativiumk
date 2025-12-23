@@ -66,7 +66,7 @@ export const OnboardingWizard: React.FC = () => {
                         transition={{ duration: 0.3 }}
                         className="flex flex-col items-center"
                     >
-                        {steps[currentStep]}
+                        {currentStep < steps.length ? steps[currentStep] : null}
                     </motion.div>
                 </AnimatePresence>
             </div>
