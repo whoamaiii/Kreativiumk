@@ -43,15 +43,37 @@ const PREMIUM_MODEL_ID = PREMIUM_MODELS[0];
 // Fallback if free model fails
 const FALLBACK_MODEL_ID = 'google/gemini-2.5-flash-preview-05-20';
 
-// API Configuration
+// API Configuration - All configurable values in one place
 const API_CONFIG = {
+    // Endpoints
     baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
+
+    // Timeouts
+    timeoutMs: 60000,           // Regular analysis: 1 minute
+    timeoutMsPremium: 180000,   // Deep analysis: 3 minutes
+
+    // Retry configuration
     maxRetries: 3,
-    retryDelayMs: 1000,
-    timeoutMs: 120000, // 2 minutes for deep analysis
+    retryDelayMs: 1000,         // Base delay (exponential backoff applied)
+
+    // Streaming retry configuration
+    maxStreamingRetries: 2,
+    streamingRetryDelayMs: 1500,
+
+    // Token limits
     maxTokensFree: 4000,
     maxTokensPremium: 8000,
-};
+
+    // Temperature (creativity level)
+    temperatureFree: 0.4,
+    temperaturePremium: 0.2,
+
+    // Cache
+    cacheTtlMs: 15 * 60 * 1000, // 15 minutes
+
+    // Mock/dev
+    mockDelayMs: 1500,
+} as const;
 
 // =============================================================================
 // TYPES
@@ -84,6 +106,7 @@ interface AnalysisCache {
     result: AnalysisResult;
     timestamp: number;
     logsHash: string;
+    analysisType: 'regular' | 'deep';
 }
 
 // Retry callback for UI visibility
@@ -91,10 +114,17 @@ export interface RetryCallback {
     onRetry?: (attempt: number, maxRetries: number, modelId: string) => void;
 }
 
+// Streaming callbacks - matches Gemini interface for parity
+export interface StreamCallbacks {
+    onChunk?: (chunk: string) => void;
+    onComplete?: (fullText: string) => void;
+    onError?: (error: Error) => void;
+    onRetry?: (attempt: number, maxRetries: number) => void;
+}
+
 // =============================================================================
 // CACHING
 // =============================================================================
-const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 let analysisCache: AnalysisCache | null = null;
 
 const generateLogsHash = (logs: LogEntry[], crisisEvents?: CrisisEvent[]): string => {
@@ -111,22 +141,50 @@ const generateLogsHash = (logs: LogEntry[], crisisEvents?: CrisisEvent[]): strin
     return hash.toString(36);
 };
 
-const getCachedAnalysis = (logsHash: string): AnalysisResult | null => {
+const getCachedAnalysis = (logsHash: string, analysisType: 'regular' | 'deep'): AnalysisResult | null => {
     if (!analysisCache) return null;
     if (analysisCache.logsHash !== logsHash) return null;
-    if (Date.now() - analysisCache.timestamp > CACHE_TTL_MS) {
+    if (analysisCache.analysisType !== analysisType) return null;
+    if (Date.now() - analysisCache.timestamp > API_CONFIG.cacheTtlMs) {
         analysisCache = null;
         return null;
     }
     return analysisCache.result;
 };
 
-const setCachedAnalysis = (result: AnalysisResult, logsHash: string): void => {
+const setCachedAnalysis = (result: AnalysisResult, logsHash: string, analysisType: 'regular' | 'deep'): void => {
     analysisCache = {
         result,
         timestamp: Date.now(),
-        logsHash
+        logsHash,
+        analysisType
     };
+};
+
+// =============================================================================
+// DATE RANGE HELPER
+// =============================================================================
+
+/**
+ * Safely calculates date range from logs without assuming sort order.
+ * Iterates through all logs to find actual min/max timestamps.
+ */
+const getLogsDateRange = (logs: LogEntry[]): { oldest: Date; newest: Date } => {
+    if (logs.length === 0) {
+        const now = new Date();
+        return { oldest: now, newest: now };
+    }
+
+    let oldest = new Date(logs[0].timestamp);
+    let newest = new Date(logs[0].timestamp);
+
+    for (const log of logs) {
+        const date = new Date(log.timestamp);
+        if (date < oldest) oldest = date;
+        if (date > newest) newest = date;
+    }
+
+    return { oldest, newest };
 };
 
 // =============================================================================
@@ -576,17 +634,18 @@ const callOpenRouter = async (
     isPremium: boolean = false
 ): Promise<OpenRouterResponse> => {
     const maxTokens = isPremium ? API_CONFIG.maxTokensPremium : API_CONFIG.maxTokensFree;
+    const timeout = isPremium ? API_CONFIG.timeoutMsPremium : API_CONFIG.timeoutMs;
 
     const requestBody: Record<string, unknown> = {
         model: modelId,
         messages,
         max_tokens: maxTokens,
         response_format: { type: 'json_object' },
-        temperature: isPremium ? 0.2 : 0.4, // Lower temperature for premium = more precise
+        temperature: isPremium ? API_CONFIG.temperaturePremium : API_CONFIG.temperatureFree,
     };
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.timeoutMs);
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     try {
         const response = await fetch(API_CONFIG.baseUrl, {
@@ -600,8 +659,6 @@ const callOpenRouter = async (
             body: JSON.stringify(requestBody),
             signal: controller.signal
         });
-
-        clearTimeout(timeoutId);
 
         if (!response.ok) {
             const errorText = await response.text();
@@ -663,6 +720,182 @@ const callWithRetry = async (
 };
 
 // =============================================================================
+// STREAMING SUPPORT
+// =============================================================================
+
+/**
+ * Calls OpenRouter with streaming enabled (SSE)
+ * Returns the accumulated full text after streaming completes
+ */
+const callOpenRouterStreaming = async (
+    messages: OpenRouterMessage[],
+    modelId: string,
+    callbacks: StreamCallbacks,
+    isPremium: boolean = false
+): Promise<string> => {
+    const maxTokens = isPremium ? API_CONFIG.maxTokensPremium : API_CONFIG.maxTokensFree;
+    const timeout = isPremium ? API_CONFIG.timeoutMsPremium : API_CONFIG.timeoutMs;
+
+    const requestBody = {
+        model: modelId,
+        messages,
+        stream: true,
+        max_tokens: maxTokens,
+        temperature: isPremium ? API_CONFIG.temperaturePremium : API_CONFIG.temperatureFree,
+    };
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+        const response = await fetch(API_CONFIG.baseUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                'HTTP-Referer': SITE_URL,
+                'X-Title': SITE_NAME,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody),
+            signal: controller.signal
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API Error ${response.status}: ${errorText}`);
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+            throw new Error('Response body is not readable');
+        }
+
+        const decoder = new TextDecoder();
+        let fullText = '';
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+
+            // Parse SSE format: data: {"choices":[{"delta":{"content":"..."}}]}
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || !trimmed.startsWith('data: ')) continue;
+
+                const json = trimmed.slice(6); // Remove "data: " prefix
+                if (json === '[DONE]') continue;
+
+                try {
+                    const parsed = JSON.parse(json);
+                    const content = parsed.choices?.[0]?.delta?.content || '';
+                    if (content) {
+                        fullText += content;
+                        callbacks.onChunk?.(content);
+                    }
+                } catch {
+                    // Skip malformed JSON chunks
+                }
+            }
+        }
+
+        callbacks.onComplete?.(fullText);
+        return fullText;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+};
+
+/**
+ * Streaming analysis using OpenRouter with retry support
+ * Matches Gemini's streaming API for consistent UX
+ */
+export const analyzeLogsStreamingWithOpenRouter = async (
+    logs: LogEntry[],
+    crisisEvents: CrisisEvent[] = [],
+    callbacks: StreamCallbacks,
+    options: { childProfile?: ChildProfile | null } = {}
+): Promise<AnalysisResult> => {
+    // Validate input
+    if (!logs || logs.length === 0) {
+        throw new Error('No logs provided for analysis');
+    }
+
+    // If no API key, return mock data
+    if (!OPENROUTER_API_KEY) {
+        if (import.meta.env.DEV) {
+            console.log('No API key found, returning mock analysis');
+        }
+        const result = await generateMockAnalysis();
+        callbacks.onComplete?.(JSON.stringify(result));
+        return result;
+    }
+
+    // Prepare data
+    const { oldest: oldestDate, newest: newestDate } = getLogsDateRange(logs);
+    const totalDays = Math.ceil((newestDate.getTime() - oldestDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+    const preparedLogs = prepareLogsForAnalysis(logs, newestDate);
+    const preparedCrisis = prepareCrisisEventsForAnalysis(crisisEvents, newestDate);
+
+    const systemPrompt = buildSystemPrompt(options.childProfile);
+    const userPrompt = buildUserPrompt(preparedLogs, preparedCrisis, totalDays);
+
+    const messages: OpenRouterMessage[] = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+    ];
+
+    // Retry loop matching Gemini pattern
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < API_CONFIG.maxStreamingRetries; attempt++) {
+        try {
+            if (import.meta.env.DEV) {
+                console.log(`[OpenRouter] Streaming analysis with ${FREE_MODEL_ID} (attempt ${attempt + 1})...`);
+            }
+
+            const fullText = await callOpenRouterStreaming(messages, FREE_MODEL_ID, callbacks, false);
+            const result = parseAnalysisResponse(fullText);
+
+            // Add metadata
+            result.dateRangeStart = oldestDate.toISOString();
+            result.dateRangeEnd = newestDate.toISOString();
+            result.isDeepAnalysis = false;
+
+            // Cache the result
+            const logsHash = generateLogsHash(logs, crisisEvents);
+            setCachedAnalysis(result, logsHash, 'regular');
+
+            return result;
+
+        } catch (error) {
+            lastError = error as Error;
+            if (import.meta.env.DEV) {
+                console.warn(`[OpenRouter] Streaming attempt ${attempt + 1} failed:`, error);
+            }
+
+            // If not the last attempt, notify and retry
+            if (attempt < API_CONFIG.maxStreamingRetries - 1) {
+                callbacks.onRetry?.(attempt + 2, API_CONFIG.maxStreamingRetries);
+                await sleep(API_CONFIG.streamingRetryDelayMs);
+            }
+        }
+    }
+
+    // All retries failed
+    if (callbacks.onError && lastError) {
+        callbacks.onError(lastError);
+    }
+    throw lastError || new Error('Streaming failed after retries');
+};
+
+// =============================================================================
 // RESPONSE PARSING
 // =============================================================================
 
@@ -709,7 +942,7 @@ const parseAnalysisResponse = (content: string): AnalysisResult => {
 
 const generateMockAnalysis = async (): Promise<AnalysisResult> => {
     // Simulate API delay
-    await sleep(1500);
+    await sleep(API_CONFIG.mockDelayMs);
 
     return {
         id: crypto.randomUUID(),
@@ -829,7 +1062,7 @@ export const analyzeLogs = async (
     // Check cache first (unless force refresh)
     const logsHash = generateLogsHash(logs, crisisEvents);
     if (!options.forceRefresh) {
-        const cached = getCachedAnalysis(logsHash);
+        const cached = getCachedAnalysis(logsHash, 'regular');
         if (cached) {
             if (import.meta.env.DEV) {
                 console.log('Returning cached analysis');
@@ -846,9 +1079,8 @@ export const analyzeLogs = async (
         return generateMockAnalysis();
     }
 
-    // Prepare data (logs are sorted newest-first)
-    const newestDate = new Date(logs[0]?.timestamp || new Date());
-    const oldestDate = new Date(logs[logs.length - 1]?.timestamp || new Date());
+    // Prepare data - safely calculate date range without assuming sort order
+    const { oldest: oldestDate, newest: newestDate } = getLogsDateRange(logs);
     const totalDays = Math.ceil((newestDate.getTime() - oldestDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
     const preparedLogs = prepareLogsForAnalysis(logs, newestDate);
@@ -858,9 +1090,9 @@ export const analyzeLogs = async (
     const systemPrompt = buildSystemPrompt(options.childProfile);
     const userPrompt = buildUserPrompt(preparedLogs, preparedCrisis, totalDays);
 
-    // Calculate date range for result (logs are sorted newest-first)
-    const dateRangeStart = logs[logs.length - 1]?.timestamp;
-    const dateRangeEnd = logs[0]?.timestamp;
+    // Calculate date range for result
+    const dateRangeStart = oldestDate.toISOString();
+    const dateRangeEnd = newestDate.toISOString();
 
     try {
         if (import.meta.env.DEV) {
@@ -894,8 +1126,8 @@ export const analyzeLogs = async (
         result.dateRangeEnd = dateRangeEnd;
         result.isDeepAnalysis = false;
 
-        // Cache the result
-        setCachedAnalysis(result, logsHash);
+        // Cache the result with analysis type
+        setCachedAnalysis(result, logsHash, 'regular');
 
         return result;
 
@@ -944,9 +1176,8 @@ export const analyzeLogsDeep = async (
         return generateMockAnalysis();
     }
 
-    // Prepare data (logs are sorted newest-first)
-    const newestDate = new Date(logs[0]?.timestamp || new Date());
-    const oldestDate = new Date(logs[logs.length - 1]?.timestamp || new Date());
+    // Prepare data - safely calculate date range without assuming sort order
+    const { oldest: oldestDate, newest: newestDate } = getLogsDateRange(logs);
     const totalDays = Math.ceil((newestDate.getTime() - oldestDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
     const preparedLogs = prepareLogsForAnalysis(logs, newestDate);
@@ -963,9 +1194,9 @@ VIKTIG: Dette er en DYP ANALYSE. Bruk mer tid på å tenke gjennom sammenhenger.
 
     const userPrompt = buildUserPrompt(preparedLogs, preparedCrisis, totalDays);
 
-    // Calculate date range for result (logs are sorted newest-first)
-    const dateRangeStart = logs[logs.length - 1]?.timestamp;
-    const dateRangeEnd = logs[0]?.timestamp;
+    // Calculate date range for result
+    const dateRangeStart = oldestDate.toISOString();
+    const dateRangeEnd = newestDate.toISOString();
 
     const messages: OpenRouterMessage[] = [
         { role: 'system', content: systemPrompt },
@@ -1007,7 +1238,7 @@ VIKTIG: Dette er en DYP ANALYSE. Bruk mer tid på å tenke gjennom sammenhenger.
 
             // Cache the result for other components (like Reports) to use
             const logsHash = generateLogsHash(logs, crisisEvents);
-            setCachedAnalysis(finalResult, logsHash);
+            setCachedAnalysis(finalResult, logsHash, 'deep');
 
             if (import.meta.env.DEV) {
                 console.log(`[OpenRouter] Deep analysis successful with ${modelId}`);
@@ -1061,6 +1292,29 @@ export const getApiStatus = (): {
 
 /**
  * Streaming analysis - Shows AI "thinking" in real-time for WOW factor
- * Uses Gemini's streaming capability
+ * Uses Gemini as primary (for Kaggle competition), falls back to OpenRouter
  */
-export const analyzeLogsStreaming = analyzeLogsStreamingWithGemini;
+export const analyzeLogsStreaming = async (
+    logs: LogEntry[],
+    crisisEvents: CrisisEvent[] = [],
+    callbacks: StreamCallbacks,
+    options: { childProfile?: ChildProfile | null } = {}
+): Promise<AnalysisResult> => {
+    // Try Gemini first (for Kaggle competition)
+    if (USE_GEMINI_PRIMARY && isGeminiConfigured()) {
+        try {
+            if (import.meta.env.DEV) {
+                console.log('[AI] Using Gemini streaming as primary...');
+            }
+            return await analyzeLogsStreamingWithGemini(logs, crisisEvents, callbacks, options);
+        } catch (geminiError) {
+            if (import.meta.env.DEV) {
+                console.warn('[AI] Gemini streaming failed, falling back to OpenRouter:', geminiError);
+            }
+            // Fall through to OpenRouter
+        }
+    }
+
+    // Fallback to OpenRouter streaming
+    return analyzeLogsStreamingWithOpenRouter(logs, crisisEvents, callbacks, options);
+};
