@@ -1,4 +1,10 @@
 {
+    "common": {
+        "close": "Lukk",
+        "required": "påkrevd",
+        "error": "Feil",
+        "validationError": "Valideringsfeil"
+    },
     "accessibility": {
         "skipToMain": "Hopp til hovedinnhold"
     },
@@ -210,11 +216,21 @@
         "effectiveness": {
             "label": "Fungerte Strategiene?",
             "required": "Påkrevd",
+            "requiredDescription": "Vennligst velg om strategiene hjalp, ikke hadde effekt, eller eskalerte situasjonen",
+            "hint": "Hjelp oss å forstå hvilke strategier som fungerer best for bedre anbefalinger",
+            "helpTooltip": "Dette hjelper å spore hvilke strategier som er mest effektive over tid",
             "helped": "Hjalp",
             "noChange": "Uendret",
             "escalated": "Eskalerte"
         },
         "duration": "Varighet (minutter)",
+        "durationHint": "Skriv inn varighet i minutter",
+        "dateOnly": "Dato",
+        "timeOnly": "Klokkeslett",
+        "dateHint": "Velg dato og tid for denne loggføringen",
+        "saved": "Logg Lagret",
+        "savedDescription": "Registreringen er lagret",
+        "saveError": "Kunne ikke lagre logg",
         "notes": {
             "label": "Notater",
             "placeholder": "Legg til flere observasjoner..."

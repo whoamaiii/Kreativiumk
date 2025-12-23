@@ -1,4 +1,10 @@
 {
+    "common": {
+        "close": "Close",
+        "required": "required",
+        "error": "Error",
+        "validationError": "Validation Error"
+    },
     "accessibility": {
         "skipToMain": "Skip to main content"
     },
@@ -210,11 +216,21 @@
         "effectiveness": {
             "label": "Did strategies work?",
             "required": "Required",
+            "requiredDescription": "Please indicate whether the strategies helped, had no effect, or escalated the situation",
+            "hint": "Help us understand which strategies work best so we can provide better recommendations",
+            "helpTooltip": "This helps track which strategies are most effective over time",
             "helped": "Helped",
             "noChange": "No Change",
             "escalated": "Escalated"
         },
         "duration": "Duration (minutes)",
+        "durationHint": "Enter the duration in minutes",
+        "dateOnly": "Date",
+        "timeOnly": "Time",
+        "dateHint": "Select the date and time of this log entry",
+        "saved": "Log Saved",
+        "savedDescription": "Your entry has been saved successfully",
+        "saveError": "Could not save log",
         "notes": {
             "label": "Notes",
             "placeholder": "Add more observations..."
