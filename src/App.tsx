@@ -1,8 +1,9 @@
-import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import { Suspense, lazy, useCallback } from 'react';
 import { DataProvider, useSettings } from './store';
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { RouteErrorBoundary } from './components/RouteErrorBoundary';
 import { ToastProvider } from './components/Toast';
 
 // Eagerly loaded - these are on the main navigation path
@@ -32,6 +33,7 @@ const GoalTracking = lazy(() => import('./components/GoalTracking').then(m => ({
 const DysregulationHeatmap = lazy(() => import('./components/DysregulationHeatmap').then(m => ({ default: m.DysregulationHeatmap })));
 const TransitionInsights = lazy(() => import('./components/TransitionInsights').then(m => ({ default: m.TransitionInsights })));
 const Settings = lazy(() => import('./components/Settings').then(m => ({ default: m.Settings })));
+const NotFound = lazy(() => import('./components/NotFound').then(m => ({ default: m.NotFound })));
 
 // Lazy loaded onboarding
 const OnboardingWizard = lazy(() => import('./components/onboarding/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
@@ -63,19 +65,61 @@ const LogEntryFormWrapper = () => {
   return <LogEntryForm onClose={handleClose} />;
 };
 
-const AppContent = () => {
+// Route guard - redirects to onboarding if not completed
+const ProtectedRoute = () => {
   const { hasCompletedOnboarding } = useSettings();
+
+  if (!hasCompletedOnboarding) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  return <Outlet />;
+};
+
+// Onboarding route - redirects to home if already completed
+const OnboardingRoute = () => {
+  const { hasCompletedOnboarding } = useSettings();
+
+  if (hasCompletedOnboarding) {
+    return <Navigate to="/" replace />;
+  }
+
   return (
-    <Layout>
+    <Suspense fallback={<PageLoader />}>
+      <OnboardingWizard />
+    </Suspense>
+  );
+};
+
+// Layout wrapper with error boundary for protected routes
+const ProtectedLayout = () => (
+  <Layout>
+    <RouteErrorBoundary>
       <Suspense fallback={<PageLoader />}>
-        {!hasCompletedOnboarding && <OnboardingWizard />}
-        <Routes>
+        <Outlet />
+      </Suspense>
+    </RouteErrorBoundary>
+  </Layout>
+);
+
+const AppContent = () => {
+  return (
+    <Routes>
+      {/* Onboarding route - standalone, no Layout */}
+      <Route path="/onboarding" element={<OnboardingRoute />} />
+
+      {/* Protected routes - require onboarding completion */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<ProtectedLayout />}>
+          {/* Eager routes */}
           <Route path="/" element={<Home />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+
+          {/* Lazy routes */}
           <Route path="/crisis" element={<CrisisMode />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/schedule" element={<VisualSchedule />} />
           <Route path="/goals" element={<GoalTracking />} />
-          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/analysis" element={<Analysis />} />
           <Route path="/log" element={<LogEntryFormWrapper />} />
           <Route path="/behavior-insights" element={<BehaviorInsights />} />
@@ -84,9 +128,12 @@ const AppContent = () => {
           <Route path="/heatmap" element={<DysregulationHeatmap />} />
           <Route path="/transitions" element={<TransitionInsights />} />
           <Route path="/settings" element={<Settings />} />
-        </Routes>
-      </Suspense>
-    </Layout>
+
+          {/* 404 catch-all */}
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Route>
+    </Routes>
   );
 };
 

@@ -568,5 +568,16 @@
             "logMoreData": "Logg Mer Data",
             "logMoreDataText": "Mer data trengs for å identifisere tydelige sensoriske mønstre."
         }
+    },
+    "notFound": {
+        "title": "404",
+        "message": "Siden ble ikke funnet",
+        "homeLink": "Gå til forsiden"
+    },
+    "routeError": {
+        "title": "Noe gikk galt",
+        "message": "En feil oppstod ved lasting av denne siden.",
+        "retry": "Prøv igjen",
+        "home": "Hjem"
     }
 }

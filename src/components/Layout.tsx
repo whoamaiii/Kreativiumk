@@ -1,11 +1,12 @@
 import React, { type ReactNode } from 'react';
+import { Outlet } from 'react-router-dom';
 import { Navigation } from './Navigation';
 import { motion } from 'framer-motion';
 import { useAppContext } from '../store';
 import { useTranslation } from 'react-i18next';
 
 interface LayoutProps {
-    children: ReactNode;
+    children?: ReactNode;
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
@@ -54,7 +55,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         </button>
                     </div>
                 </motion.div>
-                {children}
+                {children ?? <Outlet />}
             </main>
 
             <Navigation />

@@ -577,5 +577,16 @@
             "logMoreData": "Log More Data",
             "logMoreDataText": "More data needed to identify clear sensory patterns."
         }
+    },
+    "notFound": {
+        "title": "404",
+        "message": "Page not found",
+        "homeLink": "Go to home"
+    },
+    "routeError": {
+        "title": "Something went wrong",
+        "message": "An error occurred while loading this page.",
+        "retry": "Try again",
+        "home": "Home"
     }
 }

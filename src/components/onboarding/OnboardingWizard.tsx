@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StartStep } from './steps/StartStep';
 import { ProfileStep } from './steps/ProfileStep';
@@ -7,15 +8,20 @@ import { StrategiesStep } from './steps/StrategiesStep';
 
 export const OnboardingWizard: React.FC = () => {
     const [currentStep, setCurrentStep] = useState(0);
+    const navigate = useNavigate();
 
     const nextStep = () => setCurrentStep(prev => prev + 1);
+
+    const handleComplete = () => {
+        // Navigate to home after onboarding completion
+        navigate('/', { replace: true });
+    };
 
     const steps = [
         <StartStep onNext={nextStep} />,
         <ProfileStep onNext={nextStep} />,
         <TriggersStep onNext={nextStep} />,
-        <StrategiesStep onComplete={() => { }} />
-        // onComplete is handled inside StrategiesStep via store + App re-render
+        <StrategiesStep onComplete={handleComplete} />
     ];
 
     return (
