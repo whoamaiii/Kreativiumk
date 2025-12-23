@@ -3,7 +3,9 @@
         "close": "Lukk",
         "required": "påkrevd",
         "error": "Feil",
-        "validationError": "Valideringsfeil"
+        "validationError": "Valideringsfeil",
+        "noData": "Ingen data",
+        "goBack": "Gå tilbake"
     },
     "accessibility": {
         "skipToMain": "Hopp til hovedinnhold"
@@ -59,15 +61,33 @@
         "transitions": {
             "title": "Overganger",
             "subtitle": "Analyse av vanskelige overganger og effektive tiltak"
+        }
+    },
+    "transitions": {
+        "goBack": "Gå tilbake",
+        "analysis": {
+            "title": "Overgangsanalyse"
         },
-        "settings": {
-            "title": "Innstillinger",
-            "subtitle": "Barnets profil & preferanser"
+        "stats": {
+            "avgDifficulty": "Snitt Vanskelighet",
+            "totalLogged": "Totalt Logget",
+            "mostEffective": "Mest Effektive Støtte",
+            "givesAvgDifficulty": "Gir snitt vanskelighet på"
         },
-        "devTools": {
-            "title": "Utviklerverktøy",
-            "loadData": "Last testdata (2 uker)",
-            "loaded": "Lastet!"
+        "charts": {
+            "hardest": "Mest Krevende Overganger",
+            "difficulty": "Vanskelighet",
+            "progressTitle": "Utvikling over tid (Siste 14)"
+        },
+        "strategies": {
+            "title": "Anbefalte Tiltak",
+            "avgDifficulty": "Snitt Vanskelighet"
+        },
+        "emptyState": {
+            "noData": "Ingen overgangsdata ennå",
+            "howToStart": "Fullfør aktiviteter og vurder vanskelighetsgrad for å se innsikt.",
+            "noStrategies": "Ingen data om effektive tiltak ennå. Prøv å logge støtte ved overganger.",
+            "noChartData": "Ikke nok data til å vise graf"
         }
     },
     "settings": {

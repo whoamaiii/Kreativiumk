@@ -3,7 +3,9 @@
         "close": "Close",
         "required": "required",
         "error": "Error",
-        "validationError": "Validation Error"
+        "validationError": "Validation Error",
+        "noData": "No data",
+        "goBack": "Go back"
     },
     "accessibility": {
         "skipToMain": "Skip to main content"
@@ -68,6 +70,33 @@
             "title": "Developer Tools",
             "loadData": "Load test data (2 weeks)",
             "loaded": "Loaded!"
+        }
+    },
+    "transitions": {
+        "goBack": "Go back",
+        "analysis": {
+            "title": "Transition Analysis"
+        },
+        "stats": {
+            "avgDifficulty": "Avg Difficulty",
+            "totalLogged": "Total Logged",
+            "mostEffective": "Most Effective Support",
+            "givesAvgDifficulty": "Gives avg difficulty of"
+        },
+        "charts": {
+            "hardest": "Most Challenging Transitions",
+            "difficulty": "Difficulty",
+            "progressTitle": "Progress Over Time (Last 14)"
+        },
+        "strategies": {
+            "title": "Recommended Strategies",
+            "avgDifficulty": "Avg Difficulty"
+        },
+        "emptyState": {
+            "noData": "No transition data yet",
+            "howToStart": "Complete activities and rate their difficulty to see insights.",
+            "noStrategies": "No strategy data yet. Try logging support during transitions.",
+            "noChartData": "Not enough data to display chart"
         }
     },
     "settings": {
