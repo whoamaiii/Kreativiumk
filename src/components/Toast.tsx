@@ -11,12 +11,18 @@ import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react';
 // ============================================
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
+export interface ToastAction {
+    label: string;
+    onClick: () => void;
+}
+
 export interface Toast {
     id: string;
     type: ToastType;
     message: string;
     detail?: string;
     duration?: number;
+    action?: ToastAction;
 }
 
 interface ToastContextType {
@@ -160,6 +166,17 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onDismiss }) => {
                     <p className="text-slate-400 text-xs mt-1 break-words">
                         {toast.detail}
                     </p>
+                )}
+                {toast.action && (
+                    <button
+                        onClick={() => {
+                            toast.action?.onClick();
+                            onDismiss(toast.id);
+                        }}
+                        className="mt-2 px-3 py-1 text-xs font-medium rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                    >
+                        {toast.action.label}
+                    </button>
                 )}
             </div>
             <button

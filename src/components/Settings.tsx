@@ -32,6 +32,7 @@ import { Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { generateUUID } from '../utils/uuid';
 import { useSettings } from '../store';
+import { useToast } from './Toast';
 
 // Multi-select chip component with keyboard accessibility
 const ChipSelect: React.FC<{
@@ -86,6 +87,7 @@ export const Settings: React.FC = () => {
     const { t } = useTranslation();
     const { childProfile, setChildProfile, updateChildProfile, clearChildProfile } = useChildProfile();
     const { refreshData } = useSettings();
+    const { showSuccess } = useToast();
 
     // Form state - initialized from childProfile
     const [name, setName] = useState(childProfile?.name || '');
@@ -154,6 +156,7 @@ export const Settings: React.FC = () => {
             setChildProfile(profile);
         }
 
+        showSuccess(t('settings.profileSaved'), t('settings.profileSavedDescription'));
         setSaved(true);
         setTimeout(() => setSaved(false), 2000);
     };

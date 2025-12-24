@@ -18,6 +18,7 @@ import {
     type Activity
 } from './DailyPlanComponents';
 import { STORAGE_KEYS, STORAGE_PREFIXES } from '../constants/storage';
+import { useToast } from './Toast';
 
 // Extend window type for webkit prefix
 interface WebkitWindow extends Window {
@@ -190,6 +191,7 @@ export const VisualSchedule: React.FC = () => {
     const { addScheduleEntry, scheduleTemplates } = useSchedule();
     const { currentContext } = useAppContext();
     const { t, i18n } = useTranslation();
+    const { showSuccess } = useToast();
     const today = new Date().toISOString().split('T')[0];
 
     // Modal state
@@ -512,6 +514,7 @@ export const VisualSchedule: React.FC = () => {
             );
             setScheduleItems(updatedItems.sort((a, b) => a.time.localeCompare(b.time)));
             setEditingActivity(null);
+            showSuccess(t('schedule.saved'), t('schedule.activityUpdated'));
         } else {
             // Create new activity
             const newActivity: Activity = {
@@ -520,6 +523,7 @@ export const VisualSchedule: React.FC = () => {
                 status: 'upcoming'
             };
             setScheduleItems([...scheduleItems, newActivity].sort((a, b) => a.time.localeCompare(b.time)));
+            showSuccess(t('schedule.saved'), t('schedule.activityAdded'));
         }
         setIsAddModalOpen(false);
     };

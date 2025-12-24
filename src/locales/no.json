@@ -203,6 +203,8 @@
             "button": "Lagre profil",
             "saved": "Lagret!"
         },
+        "profileSaved": "Profil lagret",
+        "profileSavedDescription": "Innstillingene dine er oppdatert",
         "goBack": "Gå tilbake",
         "delete": {
             "button": "Slett profil",
@@ -412,10 +414,17 @@
             "description": "Er du sikker på at du vil slette \"{{title}}\"? Dette kan ikke angres."
         }
     },
+    "schedule": {
+        "saved": "Plan lagret",
+        "activityUpdated": "Aktiviteten er oppdatert",
+        "activityAdded": "Ny aktivitet lagt til"
+    },
     "goals": {
         "title": "IEP Mål",
         "addGoal": "Legg til nytt mål",
-        "empty": "Legg til mål for å begynne å spore fremgang.",
+        "empty": {
+            "title": "Ingen mål ennå"
+        },
         "progression": "Målprogresjon",
         "summary": "Du følger {{count}} av {{total}} mål denne uken.",
         "totalCompletion": "Samlet Fullføring",
@@ -452,7 +461,11 @@
         "validation": {
             "titleRequired": "Tittel er påkrevd",
             "targetInvalid": "Målverdi må være større enn 0"
-        }
+        },
+        "saved": "Mål lagret",
+        "savedDescription": "Nytt mål er opprettet",
+        "progressSaved": "Fremgang lagret",
+        "progressSavedDescription": "Fremgangen din er registrert"
     },
     "logExplorer": {
         "title": "Loggutforsker",

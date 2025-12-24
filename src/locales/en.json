@@ -203,6 +203,8 @@
             "button": "Save Profile",
             "saved": "Saved!"
         },
+        "profileSaved": "Profile saved",
+        "profileSavedDescription": "Your settings have been updated",
         "goBack": "Go back",
         "delete": {
             "button": "Delete profile",
@@ -412,10 +414,17 @@
             "description": "Are you sure you want to delete \"{{title}}\"? This cannot be undone."
         }
     },
+    "schedule": {
+        "saved": "Schedule saved",
+        "activityUpdated": "Activity has been updated",
+        "activityAdded": "New activity added"
+    },
     "goals": {
         "title": "IEP Goals",
         "addGoal": "Add New Goal",
-        "empty": "Add goals to start tracking progress.",
+        "empty": {
+            "title": "No goals yet"
+        },
         "progression": "Goal Progression",
         "summary": "You are tracking {{count}} of {{total}} goals this week.",
         "totalCompletion": "Total Completion",
@@ -452,7 +461,11 @@
         "validation": {
             "titleRequired": "Title is required",
             "targetInvalid": "Target value must be greater than 0"
-        }
+        },
+        "saved": "Goal saved",
+        "savedDescription": "New goal has been created",
+        "progressSaved": "Progress saved",
+        "progressSavedDescription": "Your progress has been recorded"
     },
     "logExplorer": {
         "title": "Log Explorer",

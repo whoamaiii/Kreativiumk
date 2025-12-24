@@ -6,12 +6,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { useGoals, useAppContext } from '../store';
 import { type Goal, type GoalCategory, type GoalStatus, GOAL_CATEGORIES } from '../types';
 import { useTranslation } from 'react-i18next';
+import { useToast } from './Toast';
 
 export const GoalTracking: React.FC = () => {
     const navigate = useNavigate();
     const { goals, addGoal, addGoalProgress, getOverallProgress } = useGoals();
     const { currentContext } = useAppContext();
     const { t } = useTranslation();
+    const { showSuccess } = useToast();
 
     const [showAddGoal, setShowAddGoal] = useState(false);
     const [showProgressModal, setShowProgressModal] = useState<string | null>(null);
@@ -133,6 +135,7 @@ export const GoalTracking: React.FC = () => {
         };
 
         addGoal(goal);
+        showSuccess(t('goals.saved'), t('goals.savedDescription'));
         setShowAddGoal(false);
         setNewTitle('');
         setNewDescription('');
@@ -150,6 +153,7 @@ export const GoalTracking: React.FC = () => {
             context: currentContext,
             notes: progressNote
         });
+        showSuccess(t('goals.progressSaved'), t('goals.progressSavedDescription'));
         setShowProgressModal(null);
         setProgressValue(0);
         setProgressNote('');
@@ -382,7 +386,11 @@ export const GoalTracking: React.FC = () => {
                         animate={{ opacity: 1 }}
                         className="text-center py-12"
                     >
-                        <p className="text-slate-500 mb-6 max-w-xs mx-auto text-sm">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-500/10 flex items-center justify-center">
+                            <Target size={32} className="text-indigo-400" />
+                        </div>
+                        <h3 className="text-white font-bold text-lg mb-2">{t('goals.empty.title')}</h3>
+                        <p className="text-slate-400 mb-6 max-w-xs mx-auto text-sm">
                             {t('goals.noGoals')}
                         </p>
                         <motion.button

@@ -5,7 +5,7 @@ import { ArousalChart } from './ArousalChart';
 import { Plus, Calendar, Battery, BrainCircuit, Sparkles, Loader2, RefreshCw, AlertCircle, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { analyzeLogs, analyzeLogsDeep, analyzeLogsStreaming } from '../services/ai';
 import type { AnalysisResult } from '../types';
 import { useToast } from './Toast';
@@ -21,6 +21,7 @@ export const Dashboard: React.FC = () => {
     const { crisisEvents } = useCrisis();
     const { childProfile } = useChildProfile();
     const { showError, showSuccess } = useToast();
+    const prefersReducedMotion = useReducedMotion();
 
     // AI Analysis state
     const [analysis, setAnalysis] = useState<DeepAnalysisResult | null>(null);
@@ -191,6 +192,15 @@ export const Dashboard: React.FC = () => {
     // Track if we've already attempted to load cached analysis
     const hasAttemptedCacheLoad = useRef(false);
 
+    // Track initial mount for skeleton
+    const [isInitialMount, setIsInitialMount] = useState(true);
+
+    // Brief skeleton on initial mount for perceived performance
+    useEffect(() => {
+        const timer = setTimeout(() => setIsInitialMount(false), 50);
+        return () => clearTimeout(timer);
+    }, []);
+
     // Load cached analysis on mount (doesn't call API if cached)
     useEffect(() => {
         let isMounted = true;
@@ -213,20 +223,69 @@ export const Dashboard: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- analysis intentionally excluded to prevent re-runs after setting
     }, [logs, crisisEvents, childProfile]);
 
+    // Skeleton loading state
+    if (isInitialMount && !prefersReducedMotion) {
+        return (
+            <div className="flex flex-col gap-6 pb-24 animate-in fade-in duration-100">
+                {/* Header skeleton */}
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-white/10 animate-pulse" />
+                        <div className="w-24 h-6 bg-white/10 rounded animate-pulse" />
+                    </div>
+                    <div className="w-20 h-8 bg-white/10 rounded-full animate-pulse" />
+                </div>
+
+                {/* Arousal chart skeleton */}
+                <div className="liquid-glass-card p-6 rounded-3xl mb-6">
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <div className="w-40 h-4 bg-white/10 rounded animate-pulse mb-2" />
+                            <div className="w-20 h-8 bg-white/10 rounded animate-pulse" />
+                        </div>
+                        <div className="w-16 h-6 bg-white/10 rounded-full animate-pulse" />
+                    </div>
+                    <div className="h-48 w-full bg-white/5 rounded-xl animate-pulse" />
+                </div>
+
+                {/* Energy card skeleton */}
+                <div className="liquid-glass-card p-6 rounded-3xl">
+                    <div className="flex justify-between mb-4">
+                        <div className="w-28 h-4 bg-white/10 rounded animate-pulse" />
+                        <div className="w-14 h-4 bg-white/10 rounded animate-pulse" />
+                    </div>
+                    <div className="h-3 bg-white/10 rounded-full animate-pulse" />
+                </div>
+
+                {/* AI insights skeleton */}
+                <div className="rounded-3xl bg-white/5 p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-white/10 animate-pulse" />
+                        <div className="w-24 h-5 bg-white/10 rounded animate-pulse" />
+                    </div>
+                    <div className="space-y-2">
+                        <div className="w-full h-4 bg-white/10 rounded animate-pulse" />
+                        <div className="w-3/4 h-4 bg-white/10 rounded animate-pulse" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col gap-6 pb-24">
             {/* Header */}
             <motion.div
-                initial={{ opacity: 0, y: -10 }}
+                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
+                transition={prefersReducedMotion ? { duration: 0.01 } : { duration: 0.2 }}
                 className="flex items-center justify-between mb-8"
             >
                 <div className="flex items-center gap-3">
                     <motion.div
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ type: "spring" as const, stiffness: 300, damping: 20, delay: 0.1 }}
+                        initial={prefersReducedMotion ? { opacity: 0 } : { scale: 0, rotate: -180 }}
+                        animate={prefersReducedMotion ? { opacity: 1 } : { scale: 1, rotate: 0 }}
+                        transition={prefersReducedMotion ? { duration: 0.01 } : { type: "spring" as const, stiffness: 400, damping: 25, delay: 0.05 }}
                         className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20"
                     >
                         <Sparkles size={20} />
@@ -241,9 +300,9 @@ export const Dashboard: React.FC = () => {
 
             {/* Arousal Curve Card */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+                transition={prefersReducedMotion ? { duration: 0.01 } : { duration: 0.3, delay: 0.05 }}
                 className="flex flex-col gap-4 liquid-glass-card p-6 rounded-3xl mb-6"
             >
                 <div className="flex justify-between items-start">
@@ -255,9 +314,9 @@ export const Dashboard: React.FC = () => {
                     </div>
                     {latestLog && (
                         <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: "spring" as const, stiffness: 400, damping: 15, delay: 0.3 }}
+                            initial={prefersReducedMotion ? { opacity: 0 } : { scale: 0 }}
+                            animate={prefersReducedMotion ? { opacity: 1 } : { scale: 1 }}
+                            transition={prefersReducedMotion ? { duration: 0.01 } : { type: "spring" as const, stiffness: 500, damping: 20, delay: 0.15 }}
                             className={`px-3 py-1 rounded-full text-sm font-bold ${latestLog.arousal <= 3 ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
                                 latestLog.arousal <= 7 ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' :
                                     'bg-red-500/20 text-red-600 dark:text-red-400'
@@ -280,9 +339,9 @@ export const Dashboard: React.FC = () => {
 
             {/* Energy Card */}
             <motion.div
-                initial={{ opacity: 0, x: -20 }}
+                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: -15 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+                transition={prefersReducedMotion ? { duration: 0.01 } : { duration: 0.3, delay: 0.1 }}
                 className="liquid-glass-card p-6 rounded-3xl flex flex-col gap-4"
             >
                 <div className="flex justify-between items-center">
@@ -295,7 +354,7 @@ export const Dashboard: React.FC = () => {
                     <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${currentEnergy * 10}%` }}
-                        transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+                        transition={prefersReducedMotion ? { duration: 0.01 } : { duration: 0.5, delay: 0.15, ease: "easeOut" }}
                         className="bg-gradient-to-r from-primary to-blue-400 h-3 rounded-full"
                     />
                 </div>
@@ -304,9 +363,9 @@ export const Dashboard: React.FC = () => {
 
             {/* AI Insights Card - Full Width, Enhanced */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
+                transition={prefersReducedMotion ? { duration: 0.01 } : { duration: 0.3, delay: 0.12 }}
                 className="relative overflow-hidden rounded-3xl"
             >
                 {/* Gradient background */}
@@ -496,9 +555,9 @@ export const Dashboard: React.FC = () => {
 
             {/* Floating Action Button */}
             <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring" as const, stiffness: 400, damping: 15, delay: 0.5 }}
+                initial={prefersReducedMotion ? { opacity: 0 } : { scale: 0 }}
+                animate={prefersReducedMotion ? { opacity: 1 } : { scale: 1 }}
+                transition={prefersReducedMotion ? { duration: 0.01 } : { type: "spring" as const, stiffness: 500, damping: 20, delay: 0.2 }}
                 className="fixed bottom-24 right-6 z-40 md:hidden"
             >
                 <Link

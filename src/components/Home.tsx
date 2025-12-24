@@ -17,8 +17,8 @@ const containerVariants = {
     visible: {
         opacity: 1,
         transition: {
-            staggerChildren: 0.1,
-            delayChildren: 0.3
+            staggerChildren: 0.04,
+            delayChildren: 0.1
         }
     }
 } as const;
@@ -32,11 +32,11 @@ const containerVariantsReduced = {
 } as const;
 
 const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 12 },
     visible: {
         opacity: 1,
         y: 0,
-        transition: { type: "spring" as const, stiffness: 300, damping: 24 }
+        transition: { type: "spring" as const, stiffness: 400, damping: 28 }
     }
 };
 
@@ -110,15 +110,15 @@ export const Home: React.FC = () => {
                 className="focus:outline-none"
             >
                 <motion.div
-                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -20 }}
+                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -15 }}
                 animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-                transition={prefersReducedMotion ? { duration: 0.01 } : { duration: 0.6, ease: "easeOut" }}
+                transition={prefersReducedMotion ? { duration: 0.01 } : { duration: 0.3, ease: "easeOut" }}
                 className="text-center space-y-4 mt-4"
             >
                 <motion.div
                     initial={prefersReducedMotion ? { opacity: 0 } : { scale: 0 }}
                     animate={prefersReducedMotion ? { opacity: 1 } : { scale: 1 }}
-                    transition={prefersReducedMotion ? { duration: 0.01 } : { type: "spring", stiffness: 400, damping: 15, delay: 0.1 }}
+                    transition={prefersReducedMotion ? { duration: 0.01 } : { type: "spring", stiffness: 500, damping: 20, delay: 0.05 }}
                     className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-full mb-2"
                 >
                     <Sparkles className="text-primary" size={24} />
@@ -133,30 +133,32 @@ export const Home: React.FC = () => {
                 </p>
             </motion.div>
 
-            {/* Crisis Mode Button */}
+            {/* Crisis Mode Button - Enhanced for accessibility and urgency */}
             <motion.div
-                initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: 20 }}
-                animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-                transition={prefersReducedMotion ? { duration: 0.01 } : { delay: 0.2, duration: 0.5 }}
+                initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={prefersReducedMotion ? { duration: 0 } : { delay: 0.08, duration: 0.25 }}
                 className="px-1"
             >
                 <Link
                     to="/crisis"
                     aria-label={t('home.crisisMode.ariaLabel')}
-                    className="group relative overflow-hidden liquid-glass-red p-4 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black"
+                    className="group relative overflow-hidden liquid-glass-red p-5 rounded-2xl shadow-lg shadow-red-500/30 transition-all active:scale-95 flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-black border-2 border-red-400/30"
                 >
                     <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
-                    <div className="relative z-10 flex items-center gap-3">
-                        <div className="bg-white/20 p-2 rounded-full motion-safe:animate-pulse">
-                            <Activity className="text-white" size={24} />
+                    {/* Pulsing background for attention */}
+                    <div className="absolute inset-0 bg-red-500/10 motion-safe:animate-pulse" />
+                    <div className="relative z-10 flex items-center gap-4">
+                        <div className="bg-white/25 p-3 rounded-full motion-safe:animate-pulse shadow-lg shadow-red-500/20">
+                            <Activity className="text-white" size={28} />
                         </div>
                         <div>
-                            <h2 className="text-white text-lg font-bold uppercase tracking-wider">{t('home.crisisMode.title')}</h2>
-                            <p className="text-red-100 text-xs font-medium">{t('home.crisisMode.subtitle')}</p>
+                            <h2 className="text-white text-xl font-bold uppercase tracking-wider">{t('home.crisisMode.title')}</h2>
+                            <p className="text-red-100 text-sm font-medium">{t('home.crisisMode.subtitle')}</p>
                         </div>
                     </div>
-                    <div className="relative z-10 bg-white/20 p-2 rounded-full">
-                        <ArrowRight className="text-white" size={20} />
+                    <div className="relative z-10 bg-white/25 p-3 rounded-full group-hover:bg-white/35 transition-colors">
+                        <ArrowRight className="text-white" size={24} />
                     </div>
                 </Link>
             </motion.div>

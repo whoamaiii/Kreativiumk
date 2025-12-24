@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mic, Square, AlertTriangle, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import { useCrisis, useAppContext } from '../store';
 import {
@@ -22,6 +22,7 @@ export const CrisisMode: React.FC = () => {
     const navigate = useNavigate();
     const { addCrisisEvent } = useCrisis();
     const { currentContext } = useAppContext();
+    const prefersReducedMotion = useReducedMotion();
 
     // Timer state
     const [isActive, setIsActive] = useState(true);
@@ -317,9 +318,10 @@ export const CrisisMode: React.FC = () => {
             <AnimatePresence>
                 {isActive && (
                     <motion.div
-                        initial={{ opacity: 0 }}
+                        initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
+                        transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
                         className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none"
                     >
                         <div className="w-[300px] h-[300px] bg-red-500/20 rounded-full animate-ping opacity-75"></div>
@@ -331,9 +333,9 @@ export const CrisisMode: React.FC = () => {
             <div className="relative z-10 flex flex-col flex-1 p-6">
                 {/* Header */}
                 <motion.div
-                    initial={{ opacity: 0, y: -20 }}
+                    initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4 }}
+                    transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
                     className="flex justify-between items-center mb-8"
                 >
                     <div className="flex items-center gap-2 text-red-500">
@@ -348,15 +350,16 @@ export const CrisisMode: React.FC = () => {
                         // Timer View
                         <motion.div
                             key="timer"
-                            initial={{ opacity: 0 }}
+                            initial={{ opacity: prefersReducedMotion ? 1 : 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
+                            transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
                             className="flex-1 flex flex-col items-center justify-center gap-8"
                         >
                             <motion.div
-                                initial={{ scale: 0.8, opacity: 0 }}
+                                initial={prefersReducedMotion ? { opacity: 1 } : { scale: 0.9, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
-                                transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                                transition={prefersReducedMotion ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 25 }}
                                 className="text-center"
                             >
                                 <p className="text-slate-400 text-lg mb-2 font-medium uppercase tracking-widest">{t('crisis.duration')}</p>
@@ -447,9 +450,10 @@ export const CrisisMode: React.FC = () => {
                         // Details Form
                         <motion.div
                             key="details"
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0 }}
+                            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
                             className="flex-1 overflow-y-auto pb-40"
                         >
                             <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-2xl text-center mb-6">
@@ -599,8 +603,9 @@ export const CrisisMode: React.FC = () => {
                 {/* Bottom Actions (when showing details form) */}
                 {showDetailsForm && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
+                        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.15 }}
                         className="fixed bottom-20 left-0 right-0 z-[60] bg-slate-900/95 backdrop-blur-lg border-t border-white/10"
                         style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
                     >
