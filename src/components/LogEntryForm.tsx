@@ -401,6 +401,7 @@ export const LogEntryForm: React.FC<LogEntryFormProps> = ({ onClose }) => {
                             options={STRATEGIES}
                             selected={formState.strategies}
                             onChange={setStrategies}
+                            type="strategy"
                         />
 
                         {/* Strategy Effectiveness - Improved UX with clearer prompts */}

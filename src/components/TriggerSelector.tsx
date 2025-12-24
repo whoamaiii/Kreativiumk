@@ -1,15 +1,18 @@
 import React from 'react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { translateTrigger, translateStrategy, translateWarningSign } from '../utils/translateDomain';
 
 interface TriggerSelectorProps {
     options: string[];
     selected: string[];
     onChange: (selected: string[]) => void;
     label: string;
+    /** Type of options for translation: 'trigger', 'strategy', or 'warningSign' */
+    type?: 'trigger' | 'strategy' | 'warningSign';
 }
 
-export const TriggerSelector: React.FC<TriggerSelectorProps> = ({ options, selected, onChange, label }) => {
+export const TriggerSelector: React.FC<TriggerSelectorProps> = ({ options, selected, onChange, label, type = 'trigger' }) => {
     const toggleOption = (option: string) => {
         if (selected.includes(option)) {
             onChange(selected.filter(item => item !== option));
@@ -17,6 +20,16 @@ export const TriggerSelector: React.FC<TriggerSelectorProps> = ({ options, selec
             onChange([...selected, option]);
         }
     };
+
+    // Get the appropriate translation function
+    const getTranslateFunction = () => {
+        switch (type) {
+            case 'strategy': return translateStrategy;
+            case 'warningSign': return translateWarningSign;
+            default: return translateTrigger;
+        }
+    };
+    const translate = getTranslateFunction();
 
     return (
         <div className="flex flex-col gap-3">
@@ -36,7 +49,7 @@ export const TriggerSelector: React.FC<TriggerSelectorProps> = ({ options, selec
                             )
                         )}
                     >
-                        {option}
+                        {translate(option)}
                     </button>
                 ))}
             </div>

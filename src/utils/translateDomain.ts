@@ -1,7 +1,7 @@
 import i18n from 'i18next';
 
 /**
- * Translates domain-specific terms (triggers, strategies) to the current language.
+ * Translates domain-specific terms (triggers, strategies, warning signs) to the current language.
  * Falls back to the original value if no translation is found.
  */
 export function translateTrigger(trigger: string): string {
@@ -17,8 +17,14 @@ export function translateStrategy(strategy: string): string {
     return translated === key ? strategy : translated;
 }
 
+export function translateWarningSign(sign: string): string {
+    const key = `domain.warningSigns.${sign}`;
+    const translated = i18n.t(key);
+    return translated === key ? sign : translated;
+}
+
 /**
- * Translates an array of triggers/strategies
+ * Translates an array of triggers/strategies/warning signs
  */
 export function translateTriggers(triggers: string[]): string[] {
     return triggers.map(translateTrigger);
@@ -26,4 +32,8 @@ export function translateTriggers(triggers: string[]): string[] {
 
 export function translateStrategies(strategies: string[]): string[] {
     return strategies.map(translateStrategy);
+}
+
+export function translateWarningSigns(signs: string[]): string[] {
+    return signs.map(translateWarningSign);
 }

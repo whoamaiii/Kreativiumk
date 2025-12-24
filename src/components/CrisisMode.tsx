@@ -532,7 +532,7 @@ export const CrisisMode: React.FC = () => {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0 }}
                             transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
-                            className="flex-1 overflow-y-auto pb-40"
+                            className="flex-1 overflow-y-auto pb-48"
                         >
                             <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-2xl text-center mb-6">
                                 <CheckCircle className="mx-auto text-green-500 mb-2" size={36} />
@@ -618,6 +618,7 @@ export const CrisisMode: React.FC = () => {
                                     options={WARNING_SIGNS}
                                     selected={warningSignsObserved}
                                     onChange={setWarningSignsObserved}
+                                    type="warningSign"
                                 />
 
                                 {/* Sensory Triggers */}
@@ -642,6 +643,7 @@ export const CrisisMode: React.FC = () => {
                                     options={STRATEGIES}
                                     selected={strategiesUsed}
                                     onChange={setStrategiesUsed}
+                                    type="strategy"
                                 />
 
                                 {/* Resolution */}
@@ -787,13 +789,13 @@ export const CrisisMode: React.FC = () => {
                 </AnimatePresence>
 
                 {/* Bottom Actions (when showing details form) */}
-                {showDetailsForm && (
+                {showDetailsForm && !showRecoveryCapture && (
                     <motion.div
                         initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.15 }}
-                        className="fixed bottom-20 left-0 right-0 z-[60] bg-slate-900/95 backdrop-blur-lg border-t border-white/10"
-                        style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+                        className="fixed bottom-0 left-0 right-0 z-[60] bg-slate-900/95 backdrop-blur-lg border-t border-white/10"
+                        style={{ paddingBottom: 'max(6rem, calc(env(safe-area-inset-bottom) + 5rem))' }}
                     >
                         <div className="flex gap-3 max-w-md mx-auto px-6 pt-4">
                             <button

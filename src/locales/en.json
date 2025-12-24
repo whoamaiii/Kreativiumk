@@ -131,10 +131,28 @@
         "agePlaceholder": "Years",
         "diagnoses": {
             "title": "Diagnoses",
-            "subtitle": "Select all that apply"
+            "subtitle": "Select all that apply",
+            "options": {
+                "autism": "Autism / ASD",
+                "adhd": "ADHD",
+                "add": "ADD",
+                "anxiety": "Anxiety",
+                "sensory_processing": "Sensory Processing Disorder",
+                "tourette": "Tourette's Syndrome",
+                "ocd": "OCD",
+                "intellectual_disability": "Intellectual Disability",
+                "language_disorder": "Language Disorder",
+                "other": "Other"
+            }
         },
         "communication": {
-            "title": "Communication Style"
+            "title": "Communication Style",
+            "options": {
+                "verbal": "Verbal (speaks fluently)",
+                "limited_verbal": "Limited verbal (some words/phrases)",
+                "non_verbal": "Non-verbal",
+                "aac": "AAC (augmentative/alternative communication)"
+            }
         },
         "sensoryChallenges": {
             "title": "Sensory Challenges",
@@ -726,10 +744,20 @@
             "Overgang": "Transition",
             "Uforutsigbarhet": "Unpredictability",
             "Sosial": "Social",
+            "Sosialt": "Social",
             "Ventetid": "Waiting",
             "Trengsel": "Crowding",
             "Temperatur": "Temperature",
-            "Lys": "Light"
+            "Lys": "Light",
+            "Lukt": "Smell",
+            "Smak": "Taste",
+            "Uventet Hendelse": "Unexpected Event",
+            "Sliten": "Tired",
+            "Sult": "Hunger",
+            "Tørst": "Thirst",
+            "Gruppearbeid": "Group Work",
+            "Prøve/Test": "Test/Exam",
+            "Ny Situasjon": "New Situation"
         },
         "strategies": {
             "Skjerming": "Shielding",
@@ -740,12 +768,29 @@
             "Timer/Visuell Støtte": "Timer/Visual Support",
             "Bevegelse": "Movement",
             "Pustøvelser": "Breathing Exercises",
+            "Pusting": "Breathing",
             "Fidget": "Fidget",
             "Tyngdedyne": "Weighted Blanket",
+            "Vektteppe": "Weighted Blanket",
             "Avledning": "Distraction",
             "Forutsigbar Plan": "Predictable Plan",
             "Reduserte Krav": "Reduced Demands",
-            "Validering": "Validation"
+            "Validering": "Validation",
+            "Samregulering": "Co-regulation",
+            "Eget Rom": "Own Room",
+            "Mørkt Rom": "Dark Room"
+        },
+        "warningSigns": {
+            "Økt motorisk uro": "Increased motor restlessness",
+            "Verbal eskalering": "Verbal escalation",
+            "Tilbaketrekning": "Withdrawal",
+            "Repetitive bevegelser": "Repetitive movements",
+            "Dekker ører": "Covering ears",
+            "Unngår øyekontakt": "Avoids eye contact",
+            "Rødme/svetting": "Flushing/sweating",
+            "Klamrer seg": "Clinging",
+            "Nekter instrukser": "Refuses instructions",
+            "Gråt": "Crying"
         }
     },
     "notFound": {

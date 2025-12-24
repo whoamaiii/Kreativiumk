@@ -190,15 +190,15 @@ export const DysregulationHeatmap: React.FC = () => {
                 >
                     <div className="liquid-glass-card p-4 rounded-2xl text-center">
                         <p className="text-2xl font-bold text-white">{stats.avgArousal}</p>
-                        <p className="text-xs text-slate-400">Snitt Arousal</p>
+                        <p className="text-xs text-slate-400">{t('heatmap.avgArousal')}</p>
                     </div>
                     <div className="liquid-glass-card p-4 rounded-2xl text-center">
                         <p className="text-2xl font-bold text-white">{stats.totalLogs}</p>
-                        <p className="text-xs text-slate-400">Logger</p>
+                        <p className="text-xs text-slate-400">{t('heatmap.logs')}</p>
                     </div>
                     <div className="liquid-glass-card p-4 rounded-2xl text-center">
                         <p className="text-2xl font-bold text-red-400">{stats.totalCrises}</p>
-                        <p className="text-xs text-slate-400">Kriser</p>
+                        <p className="text-xs text-slate-400">{t('heatmap.crises')}</p>
                     </div>
                 </motion.div>
             )}
@@ -212,7 +212,7 @@ export const DysregulationHeatmap: React.FC = () => {
             >
                 <div className="flex items-center gap-2 mb-4">
                     <Info size={16} className="text-slate-400" />
-                    <p className="text-slate-400 text-xs">Trykk på en celle for detaljer</p>
+                    <p className="text-slate-400 text-xs">{t('heatmap.tapForDetails')}</p>
                 </div>
 
                 {/* Grid Header - Days */}
@@ -266,7 +266,7 @@ export const DysregulationHeatmap: React.FC = () => {
                                         ${getArousalColor(arousal, count)}
                                         ${crises > 0 ? 'ring-2 ring-red-500' : ''}
                                     `}
-                                    title={count > 0 ? `Snitt: ${arousal.toFixed(1)}, Logger: ${count}` : 'Ingen data'}
+                                    title={count > 0 ? `${t('heatmap.avgArousal')}: ${arousal.toFixed(1)}, ${t('heatmap.logs')}: ${count}` : t('heatmap.noData')}
                                 >
                                     <span className="text-sm">{getArousalEmoji(arousal, count)}</span>
                                     {count > 0 && (
@@ -426,20 +426,20 @@ export const DysregulationHeatmap: React.FC = () => {
 
                             <div className="grid grid-cols-2 gap-3 mb-4">
                                 <div className={`p-4 rounded-xl ${getArousalColor(selectedCell.avgArousal, selectedCell.logCount)}`}>
-                                    <p className="text-white/80 text-xs mb-1">{t('heatmap.avgArousal', 'Snitt Arousal')}</p>
+                                    <p className="text-white/80 text-xs mb-1">{t('heatmap.avgArousal')}</p>
                                     <p className="text-white text-2xl font-bold">{selectedCell.avgArousal.toFixed(1)}</p>
                                 </div>
                                 <div className="p-4 rounded-xl bg-white/5">
-                                    <p className="text-slate-400 text-xs mb-1">{t('heatmap.maxArousal', 'Maks Arousal')}</p>
+                                    <p className="text-slate-400 text-xs mb-1">{t('heatmap.maxArousal')}</p>
                                     <p className="text-white text-2xl font-bold">{selectedCell.maxArousal.toFixed(1)}</p>
                                 </div>
                                 <div className="p-4 rounded-xl bg-white/5">
-                                    <p className="text-slate-400 text-xs mb-1">{t('heatmap.logs', 'Logger')}</p>
+                                    <p className="text-slate-400 text-xs mb-1">{t('heatmap.logs')}</p>
                                     <p className="text-white text-2xl font-bold">{selectedCell.logCount}</p>
                                 </div>
                                 <div className={`p-4 rounded-xl ${selectedCell.crisisCount > 0 ? 'bg-red-500/20' : 'bg-white/5'}`}>
                                     <p className={`text-xs mb-1 ${selectedCell.crisisCount > 0 ? 'text-red-300' : 'text-slate-400'}`}>
-                                        {t('heatmap.crises', 'Kriser')}
+                                        {t('heatmap.crises')}
                                     </p>
                                     <p className={`text-2xl font-bold ${selectedCell.crisisCount > 0 ? 'text-red-400' : 'text-white'}`}>
                                         {selectedCell.crisisCount}

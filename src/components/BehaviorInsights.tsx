@@ -103,9 +103,10 @@ export const BehaviorInsights: React.FC = () => {
     const [dateRange, setDateRange] = useState<'7' | '30' | '90'>('30');
     const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-    // Brief loading state for perceived performance
+    // Loading state for perceived performance - show skeleton briefly
     useEffect(() => {
-        const timer = setTimeout(() => setIsInitialLoading(false), 100);
+        // Show skeleton for at least 300ms for smooth transition
+        const timer = setTimeout(() => setIsInitialLoading(false), 300);
         return () => clearTimeout(timer);
     }, []);
 

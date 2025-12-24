@@ -30,9 +30,9 @@ export const Reports: React.FC = () => {
     const [isLoadingPreview, setIsLoadingPreview] = useState(false);
     const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-    // Brief loading state for perceived performance
+    // Loading state for perceived performance - show skeleton briefly
     useEffect(() => {
-        const timer = setTimeout(() => setIsInitialLoading(false), 100);
+        const timer = setTimeout(() => setIsInitialLoading(false), 300);
         return () => clearTimeout(timer);
     }, []);
 

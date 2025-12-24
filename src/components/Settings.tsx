@@ -40,7 +40,11 @@ const ChipSelect: React.FC<{
     selected: string[];
     onChange: (selected: string[]) => void;
     maxSelect?: number;
-}> = ({ options, selected, onChange, maxSelect }) => {
+    /** Optional translation key prefix for labels (e.g., 'settings.diagnoses.options') */
+    translatePrefix?: string;
+}> = ({ options, selected, onChange, maxSelect, translatePrefix }) => {
+    const { t } = useTranslation();
+
     const toggleOption = (value: string) => {
         if (selected.includes(value)) {
             onChange(selected.filter(s => s !== value));
@@ -53,7 +57,9 @@ const ChipSelect: React.FC<{
         <div className="flex flex-wrap gap-2" role="group">
             {options.map(opt => {
                 const value = typeof opt === 'string' ? opt : opt.value;
-                const label = typeof opt === 'string' ? opt : opt.label;
+                const fallbackLabel = typeof opt === 'string' ? opt : opt.label;
+                // Use translation if prefix is provided, otherwise use fallback label
+                const label = translatePrefix ? t(`${translatePrefix}.${value}`, fallbackLabel) : fallbackLabel;
                 const isSelected = selected.includes(value);
                 const isDisabled = !isSelected && maxSelect !== undefined && selected.length >= maxSelect;
 
@@ -88,6 +94,13 @@ export const Settings: React.FC = () => {
     const { childProfile, setChildProfile, updateChildProfile, clearChildProfile } = useChildProfile();
     const { refreshData } = useSettings();
     const { showSuccess } = useToast();
+
+    // Loading state for perceived performance
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
+    useEffect(() => {
+        const timer = setTimeout(() => setIsInitialLoading(false), 300);
+        return () => clearTimeout(timer);
+    }, []);
 
     // Form state - initialized from childProfile
     const [name, setName] = useState(childProfile?.name || '');
@@ -237,6 +250,24 @@ export const Settings: React.FC = () => {
         setPendingImportData(null);
     };
 
+    // Loading skeleton
+    if (isInitialLoading) {
+        return (
+            <div className="flex flex-col gap-6 py-6 pb-24 animate-pulse">
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-slate-700" />
+                    <div>
+                        <div className="h-6 w-32 bg-slate-700 rounded mb-1" />
+                        <div className="h-4 w-48 bg-slate-800 rounded" />
+                    </div>
+                </div>
+                <div className="h-24 bg-slate-800 rounded-2xl" />
+                <div className="h-32 bg-slate-800 rounded-2xl" />
+                <div className="h-40 bg-slate-800 rounded-2xl" />
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col gap-6 py-6 pb-24">
             {/* Header */}
@@ -322,6 +353,7 @@ export const Settings: React.FC = () => {
                         options={DIAGNOSIS_OPTIONS}
                         selected={diagnoses}
                         onChange={setDiagnoses}
+                        translatePrefix="settings.diagnoses.options"
                     />
                 </div>
 
@@ -345,7 +377,7 @@ export const Settings: React.FC = () => {
                                     }
                                 `}
                             >
-                                {style.label}
+                                {t(`settings.communication.options.${style.value}`, style.label)}
                             </button>
                         ))}
                     </div>

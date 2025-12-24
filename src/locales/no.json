@@ -131,10 +131,28 @@
         "agePlaceholder": "År",
         "diagnoses": {
             "title": "Diagnoser",
-            "subtitle": "Velg alle som gjelder"
+            "subtitle": "Velg alle som gjelder",
+            "options": {
+                "autism": "Autisme / ASF",
+                "adhd": "ADHD",
+                "add": "ADD",
+                "anxiety": "Angst",
+                "sensory_processing": "Sensorisk prosesseringsvansker",
+                "tourette": "Tourettes syndrom",
+                "ocd": "OCD",
+                "intellectual_disability": "Utviklingshemming",
+                "language_disorder": "Språkvansker",
+                "other": "Annet"
+            }
         },
         "communication": {
-            "title": "Kommunikasjonsstil"
+            "title": "Kommunikasjonsstil",
+            "options": {
+                "verbal": "Verbal (snakker flytende)",
+                "limited_verbal": "Begrenset verbal (noen ord/fraser)",
+                "non_verbal": "Non-verbal",
+                "aac": "ASK/AAC (alternativ kommunikasjon)"
+            }
         },
         "sensoryChallenges": {
             "title": "Sensoriske utfordringer",
