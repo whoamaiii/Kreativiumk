@@ -601,7 +601,7 @@ export const CrisisMode: React.FC = () => {
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-lg border-t border-white/10"
+                        className="fixed bottom-20 left-0 right-0 z-[60] bg-slate-900/95 backdrop-blur-lg border-t border-white/10"
                         style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
                     >
                         <div className="flex gap-3 max-w-md mx-auto px-6 pt-4">

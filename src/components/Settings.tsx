@@ -238,7 +238,7 @@ export const Settings: React.FC = () => {
         <div className="flex flex-col gap-6 py-6 pb-24">
             {/* Header */}
             <div className="flex items-center gap-4">
-                <Link to="/" className="p-2 rounded-full hover:bg-white/10 transition-colors">
+                <Link to="/" className="p-2 rounded-full hover:bg-white/10 transition-colors" aria-label={t('settings.goBack')}>
                     <ArrowLeft className="text-white" size={24} />
                 </Link>
                 <div>
@@ -502,6 +502,7 @@ export const Settings: React.FC = () => {
                                     }
                                 }}
                                 className="py-2 px-4 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 font-medium text-sm transition-colors"
+                                aria-label={t('settings.dataManagement.demo.clearButton')}
                             >
                                 <Trash2 size={16} />
                             </button>
@@ -544,6 +545,7 @@ export const Settings: React.FC = () => {
                         whileTap={{ scale: 0.98 }}
                         onClick={() => setShowDeleteConfirm(true)}
                         className="p-4 rounded-2xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                        aria-label={t('settings.delete.button')}
                     >
                         <Trash2 size={20} />
                     </motion.button>

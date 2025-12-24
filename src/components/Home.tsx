@@ -98,6 +98,7 @@ export const Home: React.FC = () => {
                 onClick={toggleLanguage}
                 className="absolute top-4 right-4 z-50 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
                 title="Switch Language / Bytt språk"
+                aria-label={t('home.switchLanguage')}
             >
                 <Globe className="text-slate-500 dark:text-slate-400" size={20} />
             </button>
@@ -349,6 +350,7 @@ export const Home: React.FC = () => {
                                     <button
                                         onClick={handleClearMockData}
                                         className="flex items-center justify-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-red-500 rounded-xl py-3 px-4 transition-colors text-sm font-medium shadow-md"
+                                        aria-label={t('home.devTools.clearData')}
                                     >
                                         {mockDataCleared ? (
                                             <Check size={16} />

@@ -146,33 +146,54 @@ export const generateLogsHash = (logs: LogEntry[], crisisEvents?: CrisisEvent[])
 
 /**
  * Creates a cache manager for analysis results
+ * Uses Map-based storage to support multiple analysis types simultaneously
  */
 export function createAnalysisCache() {
-    let cache: AnalysisCacheEntry | null = null;
+    const cacheMap = new Map<string, AnalysisCacheEntry>();
+
+    // Generate composite cache key
+    const getCacheKey = (logsHash: string, analysisType?: 'regular' | 'deep'): string => {
+        return `${logsHash}:${analysisType || 'regular'}`;
+    };
 
     return {
         get(logsHash: string, analysisType?: 'regular' | 'deep'): AnalysisResult | null {
-            if (!cache) return null;
-            if (cache.logsHash !== logsHash) return null;
-            if (analysisType !== undefined && cache.analysisType !== analysisType) return null;
-            if (Date.now() - cache.timestamp > AI_CONFIG.cacheTtlMs) {
-                cache = null;
+            const key = getCacheKey(logsHash, analysisType);
+            const entry = cacheMap.get(key);
+
+            if (!entry) return null;
+
+            // Check if cache has expired
+            if (Date.now() - entry.timestamp > AI_CONFIG.cacheTtlMs) {
+                cacheMap.delete(key);
                 return null;
             }
-            return cache.result;
+
+            return entry.result;
         },
 
         set(result: AnalysisResult, logsHash: string, analysisType?: 'regular' | 'deep'): void {
-            cache = {
+            const key = getCacheKey(logsHash, analysisType);
+            cacheMap.set(key, {
                 result,
                 timestamp: Date.now(),
                 logsHash,
                 analysisType
-            };
+            });
+
+            // Cleanup expired entries (limit map size to prevent memory leaks)
+            if (cacheMap.size > 10) {
+                const now = Date.now();
+                for (const [k, v] of cacheMap.entries()) {
+                    if (now - v.timestamp > AI_CONFIG.cacheTtlMs) {
+                        cacheMap.delete(k);
+                    }
+                }
+            }
         },
 
         clear(): void {
-            cache = null;
+            cacheMap.clear();
         }
     };
 }

@@ -624,32 +624,70 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }), [hasCompletedOnboarding, completeOnboarding, loadFromStorage]);
 
     // ============================================
-    // MULTI-TAB SYNC (listen for storage events)
+    // MULTI-TAB SYNC (listen for storage events with Zod validation)
     // ============================================
     useEffect(() => {
         const handleStorageChange = (e: StorageEvent) => {
             if (!e.key || !e.newValue) return;
 
             try {
+                const parsed = JSON.parse(e.newValue);
+
                 switch (e.key) {
-                    case STORAGE_KEYS.LOGS:
-                        setLogs(JSON.parse(e.newValue));
+                    case STORAGE_KEYS.LOGS: {
+                        const result = z.array(LogEntrySchema).safeParse(parsed);
+                        if (result.success) {
+                            setLogs(result.data);
+                        } else if (import.meta.env.DEV) {
+                            console.warn('[Storage Sync] Invalid logs data from other tab');
+                        }
                         break;
-                    case STORAGE_KEYS.CRISIS_EVENTS:
-                        setCrisisEvents(JSON.parse(e.newValue));
+                    }
+                    case STORAGE_KEYS.CRISIS_EVENTS: {
+                        const result = z.array(CrisisEventSchema).safeParse(parsed);
+                        if (result.success) {
+                            setCrisisEvents(result.data);
+                        } else if (import.meta.env.DEV) {
+                            console.warn('[Storage Sync] Invalid crisis events data from other tab');
+                        }
                         break;
-                    case STORAGE_KEYS.SCHEDULE_ENTRIES:
-                        setScheduleEntries(JSON.parse(e.newValue));
+                    }
+                    case STORAGE_KEYS.SCHEDULE_ENTRIES: {
+                        const result = z.array(ScheduleEntrySchema).safeParse(parsed);
+                        if (result.success) {
+                            setScheduleEntries(result.data);
+                        } else if (import.meta.env.DEV) {
+                            console.warn('[Storage Sync] Invalid schedule entries data from other tab');
+                        }
                         break;
-                    case STORAGE_KEYS.SCHEDULE_TEMPLATES:
-                        setScheduleTemplates(JSON.parse(e.newValue));
+                    }
+                    case STORAGE_KEYS.SCHEDULE_TEMPLATES: {
+                        const result = z.array(DailyScheduleTemplateSchema).safeParse(parsed);
+                        if (result.success) {
+                            setScheduleTemplates(result.data);
+                        } else if (import.meta.env.DEV) {
+                            console.warn('[Storage Sync] Invalid schedule templates data from other tab');
+                        }
                         break;
-                    case STORAGE_KEYS.GOALS:
-                        setGoals(JSON.parse(e.newValue));
+                    }
+                    case STORAGE_KEYS.GOALS: {
+                        const result = z.array(GoalSchema).safeParse(parsed);
+                        if (result.success) {
+                            setGoals(result.data);
+                        } else if (import.meta.env.DEV) {
+                            console.warn('[Storage Sync] Invalid goals data from other tab');
+                        }
                         break;
-                    case STORAGE_KEYS.CHILD_PROFILE:
-                        setChildProfileState(JSON.parse(e.newValue));
+                    }
+                    case STORAGE_KEYS.CHILD_PROFILE: {
+                        const result = ChildProfileSchema.nullable().safeParse(parsed);
+                        if (result.success) {
+                            setChildProfileState(result.data);
+                        } else if (import.meta.env.DEV) {
+                            console.warn('[Storage Sync] Invalid child profile data from other tab');
+                        }
                         break;
+                    }
                     case STORAGE_KEYS.CURRENT_CONTEXT:
                         if (e.newValue === 'home' || e.newValue === 'school') {
                             setCurrentContextState(e.newValue);

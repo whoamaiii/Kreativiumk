@@ -61,7 +61,18 @@
         "transitions": {
             "title": "Overganger",
             "subtitle": "Analyse av vanskelige overganger og effektive tiltak"
-        }
+        },
+        "settings": {
+            "title": "Innstillinger",
+            "subtitle": "Barnets profil og preferanser"
+        },
+        "devTools": {
+            "title": "Utviklerverktøy",
+            "loadData": "Last testdata (2 uker)",
+            "loaded": "Lastet!",
+            "clearData": "Slett alle testdata"
+        },
+        "switchLanguage": "Bytt språk"
     },
     "energyRegulation": {
         "title": "Energi & Regulering",
@@ -178,6 +189,7 @@
                 "subtitle": "Last inn 3 måneder med testdata",
                 "desc": "Genererer realistiske atferdsdata med mønstre som AI-analysen kan oppdage. Perfekt for testing og demonstrasjon.",
                 "loadButton": "Last Demo Data",
+                "clearButton": "Slett demo data",
                 "confirmLoad": "Dette vil erstatte eksisterende data. Fortsett?",
                 "confirmClear": "Slette all data?"
             }
@@ -191,7 +203,9 @@
             "button": "Lagre profil",
             "saved": "Lagret!"
         },
+        "goBack": "Gå tilbake",
         "delete": {
+            "button": "Slett profil",
             "modal": {
                 "title": "Slett profil?",
                 "desc": "Er du sikker på at du vil slette barnets profil? Dette kan ikke angres.",
@@ -352,6 +366,7 @@
             "sampleCrisis": "Krisehendelser (eksempler)",
             "more": "flere"
         },
+        "closePreview": "Lukk forhåndsvisning",
         "error": {
             "noData": "Ingen data å generere rapport fra for denne perioden.",
             "failed": "Kunne ikke generere PDF. Prøv igjen."
@@ -482,6 +497,7 @@
         "thinking": "Tenker...",
         "deepAnalysis": "Dyp Analyse",
         "runDeepAnalysis": "Kjør Dyp Analyse",
+        "refreshAnalysis": "Oppdater analyse",
         "analyzingWithAi": "Analyserer med AI...",
         "dateRange": {
             "7days": "7 Dager",

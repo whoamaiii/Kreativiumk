@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Play, AlertTriangle, Brain, Calendar, Loader2, RefreshCw, TrendingUp, Shield, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
 import { useLogs, useCrisis, useChildProfile } from '../store';
 import { analyzeLogs, analyzeLogsDeep } from '../services/ai';
 import type { AnalysisResult, LogEntry } from '../types';
@@ -250,6 +251,7 @@ export const BehaviorInsights: React.FC = () => {
                         onClick={() => runAnalysis(true)}
                         disabled={isAnalyzing || isDeepAnalyzing}
                         className="size-10 flex items-center justify-center rounded-full bg-white/5 border border-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+                        aria-label={t('behaviorInsights.refreshAnalysis')}
                     >
                         {isAnalyzing ? (
                             <Loader2 size={20} className="text-primary animate-spin" />
@@ -324,9 +326,9 @@ export const BehaviorInsights: React.FC = () => {
                                 </div>
                             )}
                         </div>
-                        <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
-                            {analysis.summary}
-                        </p>
+                        <div className="text-slate-300 text-sm leading-relaxed prose prose-invert prose-sm max-w-none">
+                            <ReactMarkdown>{analysis.summary}</ReactMarkdown>
+                        </div>
 
                         {/* Recommendations */}
                         {analysis.recommendations && analysis.recommendations.length > 0 && (
@@ -572,9 +574,9 @@ export const BehaviorInsights: React.FC = () => {
                                 <Brain size={16} className="text-primary" />
                                 {t('behaviorInsights.strategy.aiAnalysis')}
                             </h3>
-                            <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
-                                {analysis.strategyEvaluation}
-                            </p>
+                            <div className="text-slate-300 text-sm leading-relaxed prose prose-invert prose-sm max-w-none">
+                                <ReactMarkdown>{analysis.strategyEvaluation}</ReactMarkdown>
+                            </div>
                         </div>
                     )}
                 </div>

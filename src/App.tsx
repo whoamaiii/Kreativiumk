@@ -112,13 +112,19 @@ const OnboardingRoute = () => {
 
 // Layout wrapper with error boundary for protected routes
 const ProtectedLayout = () => (
-  <Layout>
-    <RouteErrorBoundary>
-      <Suspense fallback={<PageLoader />}>
-        <Outlet />
-      </Suspense>
-    </RouteErrorBoundary>
-  </Layout>
+  <>
+    {/* Load shader after main app shell renders - doesn't block content */}
+    <Suspense fallback={null}>
+      <BackgroundShader />
+    </Suspense>
+    <Layout>
+      <RouteErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Outlet />
+        </Suspense>
+      </RouteErrorBoundary>
+    </Layout>
+  </>
 );
 
 const AppContent = () => {
@@ -162,10 +168,8 @@ function App() {
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <DataProvider>
           <ToastProvider>
-            {/* Load shader on ALL devices, CSS fallback only while loading */}
-            <Suspense fallback={<CSSBackground />}>
-              <BackgroundShader />
-            </Suspense>
+            {/* CSS background always visible - shader loads in ProtectedLayout */}
+            <CSSBackground />
             <AppContent />
           </ToastProvider>
         </DataProvider>

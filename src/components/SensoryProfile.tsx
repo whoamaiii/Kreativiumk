@@ -263,8 +263,8 @@ export const SensoryProfile: React.FC = () => {
                     {/* Radar Chart SVG */}
                     <div className="relative flex items-center justify-center min-h-[300px]" aria-live="polite">
                         <svg
-                            className="w-full h-full max-w-[300px] max-h-[300px]"
-                            viewBox="0 0 300 300"
+                            className="w-full h-full max-w-[380px] max-h-[300px]"
+                            viewBox="-40 0 380 300"
                             role="img"
                             aria-labelledby={`${chartTitleId} ${chartDescId}`}
                         >

@@ -71,31 +71,36 @@ export const Analysis: React.FC = () => {
     const filterArousal = filters.filterArousal;
     const filterContext = filters.filterContext;
 
-    // Persist filters to localStorage
+    // Persist filters to localStorage and reset pagination
     const updateFilters = useCallback((updates: Partial<AnalysisFilters>) => {
         setFilters(prev => {
             const next = { ...prev, ...updates };
             localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(next));
             return next;
         });
+        // Reset pagination when filters change (except for search which is debounced)
+        if ('filterArousal' in updates || 'filterContext' in updates) {
+            setVisibleCount(LOGS_PER_PAGE);
+        }
     }, []);
 
     const setSearchTerm = (value: string) => updateFilters({ searchTerm: value });
     const setFilterArousal = (value: AnalysisFilters['filterArousal']) => updateFilters({ filterArousal: value });
     const setFilterContext = (value: AnalysisFilters['filterContext']) => updateFilters({ filterContext: value });
 
-    // Debounce search input (300ms)
+    // Debounce search input (300ms) and reset pagination when debounced value changes
     useEffect(() => {
         const timer = setTimeout(() => {
-            setDebouncedSearchTerm(searchTerm);
+            setDebouncedSearchTerm(prev => {
+                if (prev !== searchTerm) {
+                    // Reset pagination when search term actually changes
+                    setVisibleCount(LOGS_PER_PAGE);
+                }
+                return searchTerm;
+            });
         }, 300);
         return () => clearTimeout(timer);
     }, [searchTerm]);
-
-    // Reset pagination when filters change
-    useEffect(() => {
-        setVisibleCount(LOGS_PER_PAGE);
-    }, [debouncedSearchTerm, filterArousal, filterContext]);
 
     // Filter Logic (uses debounced search for performance)
     const filteredLogs = useMemo(() => {

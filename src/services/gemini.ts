@@ -33,12 +33,7 @@ const getGenAI = (): GoogleGenAI => {
 
 // Model configuration
 const MODEL_ID = 'gemini-2.0-flash';
-const PREMIUM_MODEL_ID = 'gemini-2.5-pro-preview-06-05';
-
-// Log warning for preview models in dev mode
-if (import.meta.env.DEV && PREMIUM_MODEL_ID.includes('preview')) {
-    console.warn(`[Gemini] Using preview model ${PREMIUM_MODEL_ID} - may be deprecated`);
-}
+const PREMIUM_MODEL_ID = 'gemini-2.5-pro';
 
 // =============================================================================
 // CACHING (using shared cache factory)

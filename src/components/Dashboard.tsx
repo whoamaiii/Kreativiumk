@@ -504,6 +504,7 @@ export const Dashboard: React.FC = () => {
                 <Link
                     to="/log"
                     className="flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white rounded-full w-14 h-14 shadow-lg shadow-primary/30 transition-transform active:scale-95"
+                    aria-label="Ny logg"
                 >
                     <Plus size={24} />
                 </Link>

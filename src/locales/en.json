@@ -69,8 +69,10 @@
         "devTools": {
             "title": "Developer Tools",
             "loadData": "Load test data (2 weeks)",
-            "loaded": "Loaded!"
-        }
+            "loaded": "Loaded!",
+            "clearData": "Clear all test data"
+        },
+        "switchLanguage": "Switch language"
     },
     "energyRegulation": {
         "title": "Energy & Regulation",
@@ -187,6 +189,7 @@
                 "subtitle": "Load 3 months of test data",
                 "desc": "Generates realistic behavior data for AI analysis testing.",
                 "loadButton": "Load Demo Data",
+                "clearButton": "Clear demo data",
                 "confirmLoad": "This will replace existing data. Continue?",
                 "confirmClear": "Delete all data?"
             }
@@ -200,7 +203,9 @@
             "button": "Save Profile",
             "saved": "Saved!"
         },
+        "goBack": "Go back",
         "delete": {
+            "button": "Delete profile",
             "modal": {
                 "title": "Delete Profile?",
                 "desc": "Are you sure you want to delete the profile? This cannot be undone.",
@@ -361,6 +366,7 @@
             "sampleCrisis": "Crisis Events (samples)",
             "more": "more"
         },
+        "closePreview": "Close preview",
         "error": {
             "noData": "No data to generate report from for this period.",
             "failed": "Could not generate PDF. Please try again."
@@ -491,6 +497,7 @@
         "thinking": "Thinking...",
         "deepAnalysis": "Deep Analysis",
         "runDeepAnalysis": "Run Deep Analysis",
+        "refreshAnalysis": "Refresh analysis",
         "analyzingWithAi": "Analyzing with AI...",
         "dateRange": {
             "7days": "7 Days",
