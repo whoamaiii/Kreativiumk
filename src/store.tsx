@@ -200,6 +200,9 @@ function getStorageString(key: string, fallback: ContextType): ContextType {
     }
 }
 
+// Custom event for storage errors that can be caught by UI components
+export const STORAGE_ERROR_EVENT = 'storage-quota-exceeded';
+
 // Helper: Safe localStorage setter with quota error handling
 function safeSetItem(key: string, value: string): boolean {
     try {
@@ -209,9 +212,20 @@ function safeSetItem(key: string, value: string): boolean {
         if (error instanceof DOMException &&
             (error.name === 'QuotaExceededError' ||
              error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
-            console.error(`localStorage quota exceeded when saving ${key}`);
+            if (import.meta.env.DEV) {
+                console.error(`localStorage quota exceeded when saving ${key}`);
+            }
+            // Dispatch event so UI can show notification
+            window.dispatchEvent(new CustomEvent(STORAGE_ERROR_EVENT, {
+                detail: { key, error: 'quota_exceeded' }
+            }));
         } else {
-            console.error(`Failed to save ${key} to localStorage:`, error);
+            if (import.meta.env.DEV) {
+                console.error(`Failed to save ${key} to localStorage:`, error);
+            }
+            window.dispatchEvent(new CustomEvent(STORAGE_ERROR_EVENT, {
+                detail: { key, error: 'save_failed' }
+            }));
         }
         return false;
     }

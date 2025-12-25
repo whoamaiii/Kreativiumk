@@ -5,7 +5,19 @@
         "error": "Feil",
         "validationError": "Valideringsfeil",
         "noData": "Ingen data",
-        "goBack": "Gå tilbake"
+        "goBack": "Gå tilbake",
+        "storageError": "Lagringsfeil",
+        "storageQuotaExceeded": "Enhetslagringen er full. Noen data kan ikke lagres.",
+        "storageSaveError": "Kunne ikke lagre data. Vennligst prøv igjen."
+    },
+    "chart": {
+        "noDataForPeriod": "Ingen data tilgjengelig for denne perioden"
+    },
+    "errorBoundary": {
+        "title": "Noe gikk galt",
+        "description": "En uventet feil oppstod. Prøv å laste siden på nytt.",
+        "tryAgain": "Prøv igjen",
+        "reload": "Last på nytt"
     },
     "accessibility": {
         "skipToMain": "Hopp til hovedinnhold"

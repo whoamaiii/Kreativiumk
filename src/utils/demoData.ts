@@ -581,7 +581,9 @@ export function loadDemoData(): DemoData {
     localStorage.setItem(STORAGE_KEYS.CHILD_PROFILE, JSON.stringify(data.childProfile));
     localStorage.setItem(STORAGE_KEYS.ONBOARDING_COMPLETED, 'true');
 
-    console.log(`[Demo Data] Loaded ${data.logs.length} logs, ${data.crisisEvents.length} crisis events, ${data.goals.length} goals`);
+    if (import.meta.env.DEV) {
+        console.log(`[Demo Data] Loaded ${data.logs.length} logs, ${data.crisisEvents.length} crisis events, ${data.goals.length} goals`);
+    }
 
     return data;
 }
@@ -599,5 +601,7 @@ export function clearDemoData(): void {
     localStorage.removeItem(STORAGE_KEYS.SCHEDULE_TEMPLATES);
     localStorage.removeItem(STORAGE_KEYS.CURRENT_CONTEXT);
 
-    console.log('[Demo Data] Cleared all demo data');
+    if (import.meta.env.DEV) {
+        console.log('[Demo Data] Cleared all demo data');
+    }
 }

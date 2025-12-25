@@ -119,20 +119,21 @@ export function calculateVulnerabilityWindow(
         };
     }
 
-    // Sort crises by timestamp
-    const sortedCrises = [...crisisEvents].sort((a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
+    // Sort crises by timestamp - precompute timestamps for performance
+    const sortedCrises = [...crisisEvents]
+        .map(c => ({
+            ...c,
+            startMs: new Date(c.timestamp).getTime(),
+            endMs: new Date(c.timestamp).getTime() + (c.durationSeconds * 1000)
+        }))
+        .sort((a, b) => a.startMs - b.startMs);
 
     // Count re-escalations within vulnerability window
     let reEscalations = 0;
     const timeBetweenCrises: number[] = [];
 
     for (let i = 1; i < sortedCrises.length; i++) {
-        const prevEnd = new Date(sortedCrises[i - 1].timestamp).getTime() +
-                        (sortedCrises[i - 1].durationSeconds * 1000);
-        const nextStart = new Date(sortedCrises[i].timestamp).getTime();
-        const gap = (nextStart - prevEnd) / (60 * 1000); // minutes
+        const gap = (sortedCrises[i].startMs - sortedCrises[i - 1].endMs) / (60 * 1000); // minutes
 
         timeBetweenCrises.push(gap);
 

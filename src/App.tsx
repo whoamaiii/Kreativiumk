@@ -4,7 +4,7 @@ import { DataProvider, useSettings } from './store';
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
-import { ToastProvider } from './components/Toast';
+import { ToastProvider, StorageErrorListener } from './components/Toast';
 
 // Eagerly loaded - these are on the main navigation path
 import { Home } from './components/Home';
@@ -165,9 +165,10 @@ const AppContent = () => {
 function App() {
   return (
     <ErrorBoundary>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <BrowserRouter>
         <DataProvider>
           <ToastProvider>
+            <StorageErrorListener />
             {/* CSS background always visible - shader loads in ProtectedLayout */}
             <CSSBackground />
             <AppContent />

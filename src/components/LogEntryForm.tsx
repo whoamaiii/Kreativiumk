@@ -238,7 +238,11 @@ export const LogEntryForm: React.FC<LogEntryFormProps> = ({ onClose }) => {
                 return;
             }
 
-            addLog(newLog);
+            const success = addLog(newLog);
+            if (!success) {
+                showError(t('common.error'), t('log.saveError'));
+                return;
+            }
             showSuccess(t('log.saved'), t('log.savedDescription'));
             onClose();
         } catch (error) {

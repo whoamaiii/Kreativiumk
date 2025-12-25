@@ -2,12 +2,15 @@ import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { LogEntry } from '../types';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 interface ArousalChartProps {
     logs: LogEntry[];
 }
 
 export const ArousalChart: React.FC<ArousalChartProps> = ({ logs }) => {
+    const { t } = useTranslation();
+
     // Sort logs by timestamp
     const sortedLogs = [...logs].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
@@ -20,7 +23,7 @@ export const ArousalChart: React.FC<ArousalChartProps> = ({ logs }) => {
     if (data.length === 0) {
         return (
             <div className="flex items-center justify-center h-full text-slate-400">
-                No data available for this period
+                {t('chart.noDataForPeriod')}
             </div>
         );
     }

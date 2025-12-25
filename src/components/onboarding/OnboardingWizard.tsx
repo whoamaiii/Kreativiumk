@@ -17,12 +17,15 @@ export const OnboardingWizard: React.FC = () => {
         navigate('/', { replace: true });
     };
 
-    const steps = [
-        <StartStep onNext={nextStep} />,
-        <ProfileStep onNext={nextStep} />,
-        <TriggersStep onNext={nextStep} />,
-        <StrategiesStep onComplete={handleComplete} />
-    ];
+    const renderStep = () => {
+        switch (currentStep) {
+            case 0: return <StartStep onNext={nextStep} />;
+            case 1: return <ProfileStep onNext={nextStep} />;
+            case 2: return <TriggersStep onNext={nextStep} />;
+            case 3: return <StrategiesStep onComplete={handleComplete} />;
+            default: return null;
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xl">
@@ -72,7 +75,7 @@ export const OnboardingWizard: React.FC = () => {
                         transition={{ duration: 0.3 }}
                         className="flex flex-col items-center"
                     >
-                        {currentStep < steps.length ? steps[currentStep] : null}
+                        {renderStep()}
                     </motion.div>
                 </AnimatePresence>
             </div>

@@ -5,7 +5,19 @@
         "error": "Error",
         "validationError": "Validation Error",
         "noData": "No data",
-        "goBack": "Go back"
+        "goBack": "Go back",
+        "storageError": "Storage error",
+        "storageQuotaExceeded": "Device storage is full. Some data may not be saved.",
+        "storageSaveError": "Failed to save data. Please try again."
+    },
+    "chart": {
+        "noDataForPeriod": "No data available for this period"
+    },
+    "errorBoundary": {
+        "title": "Something went wrong",
+        "description": "An unexpected error occurred. Try reloading the page.",
+        "tryAgain": "Try again",
+        "reload": "Reload"
     },
     "accessibility": {
         "skipToMain": "Skip to main content"

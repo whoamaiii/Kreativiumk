@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import i18n from 'i18next';
 
 interface Props {
     children: ReactNode;
@@ -48,10 +49,10 @@ export class ErrorBoundary extends Component<Props, State> {
                             <AlertTriangle className="text-red-400" size={32} />
                         </div>
                         <h2 className="text-xl font-bold text-white mb-2">
-                            Noe gikk galt
+                            {i18n.t('errorBoundary.title')}
                         </h2>
                         <p className="text-slate-400 text-sm mb-6">
-                            En uventet feil oppstod. Prøv å laste siden på nytt.
+                            {i18n.t('errorBoundary.description')}
                         </p>
                         {import.meta.env.DEV && this.state.error && (
                             <pre className="text-left text-xs text-red-400 bg-black/20 p-3 rounded-lg mb-4 overflow-auto max-h-32">
@@ -63,14 +64,14 @@ export class ErrorBoundary extends Component<Props, State> {
                                 onClick={this.handleReset}
                                 className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-colors"
                             >
-                                Prøv igjen
+                                {i18n.t('errorBoundary.tryAgain')}
                             </button>
                             <button
                                 onClick={this.handleReload}
                                 className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl font-medium transition-colors flex items-center gap-2"
                             >
                                 <RefreshCw size={16} />
-                                Last på nytt
+                                {i18n.t('errorBoundary.reload')}
                             </button>
                         </div>
                     </div>

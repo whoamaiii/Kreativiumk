@@ -2,9 +2,11 @@
 // This file exports both the ToastProvider component and useToast hook.
 // This is a valid React pattern for context providers.
 
-import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { STORAGE_ERROR_EVENT } from '../store';
 
 // ============================================
 // TOAST TYPES
@@ -188,6 +190,38 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onDismiss }) => {
             </button>
         </motion.div>
     );
+};
+
+// ============================================
+// STORAGE ERROR LISTENER
+// ============================================
+export const StorageErrorListener: React.FC = () => {
+    const { showError } = useToast();
+    const { t } = useTranslation();
+
+    useEffect(() => {
+        const handleStorageError = (event: CustomEvent<{ key: string; error: string }>) => {
+            const { error } = event.detail;
+            if (error === 'quota_exceeded') {
+                showError(
+                    t('common.storageError', 'Storage full'),
+                    t('common.storageQuotaExceeded', 'Device storage is full. Some data may not be saved.')
+                );
+            } else {
+                showError(
+                    t('common.storageError', 'Storage error'),
+                    t('common.storageSaveError', 'Failed to save data. Please try again.')
+                );
+            }
+        };
+
+        window.addEventListener(STORAGE_ERROR_EVENT, handleStorageError as EventListener);
+        return () => {
+            window.removeEventListener(STORAGE_ERROR_EVENT, handleStorageError as EventListener);
+        };
+    }, [showError, t]);
+
+    return null;
 };
 
 export default ToastProvider;

@@ -44,7 +44,7 @@ export const CrisisMode: React.FC = () => {
     // Recovery capture state
     const [showRecoveryCapture, setShowRecoveryCapture] = useState(false);
     const [recoveryTime, setRecoveryTime] = useState<number | undefined>(undefined);
-    const [recoveryStartTime, setRecoveryStartTime] = useState<Date | null>(null);
+    const [recoveryStartTime, setRecoveryStartTime] = useState<number | null>(null);
     const [recoveryElapsed, setRecoveryElapsed] = useState(0);
 
     // Audio Recording refs - declared early so cleanup effect can access them
@@ -139,7 +139,7 @@ export const CrisisMode: React.FC = () => {
         if (!showRecoveryCapture || !recoveryStartTime) return;
 
         const interval = setInterval(() => {
-            const elapsed = Math.floor((Date.now() - recoveryStartTime.getTime()) / 1000);
+            const elapsed = Math.floor((Date.now() - recoveryStartTime) / 1000);
             setRecoveryElapsed(elapsed);
         }, 1000);
 
@@ -282,7 +282,7 @@ export const CrisisMode: React.FC = () => {
         // Transition to recovery capture phase
         setShowDetailsForm(false);
         setShowRecoveryCapture(true);
-        setRecoveryStartTime(new Date());
+        setRecoveryStartTime(Date.now());
     };
 
     const handleSaveWithRecovery = () => {
