@@ -169,9 +169,9 @@ export function createAnalysisCache() {
                 return null;
             }
 
-            // Validate cache entry structure
+            // Validate cache entry structure (summary is required, recommendations is optional)
             const result = entry.result;
-            if (!result?.summary || !Array.isArray(result?.recommendations)) {
+            if (!result?.summary || (result.recommendations !== undefined && !Array.isArray(result.recommendations))) {
                 cacheMap.delete(key);
                 return null;
             }
