@@ -18,6 +18,27 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['vite.svg', 'icon.svg'],
+      workbox: {
+        // Increase cache limit for WebLLM bundle (~6MB)
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
+        // Don't precache WebLLM chunk - it's loaded on-demand
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/huggingface\.co\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'webllm-models',
+              expiration: {
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
+      },
       manifest: {
         name: 'NeuroLogg Pro',
         short_name: 'NeuroLogg',
@@ -59,12 +80,14 @@ export default defineConfig({
           'vendor-ui': ['framer-motion', 'lucide-react', 'recharts'],
           // 3D/WebGL (largest dependency)
           'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
+          // WebLLM for local AI inference
+          'vendor-webllm': ['@mlc-ai/web-llm'],
           // Utilities
           'vendor-utils': ['date-fns', 'uuid', 'clsx', 'tailwind-merge'],
         },
       },
     },
-    // Three.js is ~1MB minified - unavoidable, but we only load it on desktop
-    chunkSizeWarningLimit: 1100,
+    // WebLLM (~5MB) and Three.js (~1MB) are large but loaded on-demand
+    chunkSizeWarningLimit: 6000,
   },
 })

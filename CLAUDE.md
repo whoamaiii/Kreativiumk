@@ -34,9 +34,21 @@ React Context-based (no Redux). All state in `src/store.tsx`:
 All data persists to `localStorage` with `kreativium_*` key prefix.
 
 ### AI Integration
-Dual API support in `src/services/`:
-- `gemini.ts` - Google Gemini API (primary)
-- `ai.ts` - OpenRouter API (fallback with premium model chain: Grok-4 → GPT-5.1 → Gemini 2.5 Pro)
+Three-tier AI support in `src/services/`:
+
+**Current (Cloud APIs):**
+- `ai.ts` - OpenRouter API (primary, premium model chain: Grok-4 → GPT-5.1 → Gemini 2.5 Pro)
+- `gemini.ts` - Google Gemini API (alternative)
+
+**Future (Local Inference):**
+- `localModel.ts` - WebLLM integration for offline-first AI (currently disabled)
+- Uses `@mlc-ai/web-llm` package (~5.5MB bundle, will be optimized when enabled)
+- Planned: Fine-tuned Gemma model for Norwegian behavioral analysis
+- Context: `src/contexts/ModelContext.tsx` manages model loading state
+
+> **Note:** Local model support is intentionally disabled. The app currently uses OpenRouter.
+> When ready to enable local inference, set `LOCAL_SERVER_CONFIG.enabled = true` in `localModel.ts`
+> or implement the WebLLM flow via the ModelLoader component.
 
 App works without API keys using mock data.
 
@@ -45,6 +57,7 @@ App works without API keys using mock data.
 - **Charts**: Recharts, Three.js with @react-three/fiber (lazy-loaded)
 - **i18n**: i18next (Norwegian primary, English fallback) - translations in `src/locales/`
 - **PDF**: jsPDF + jspdf-autotable
+- **Local AI**: @mlc-ai/web-llm (future, currently bundled but disabled)
 
 ### Design System
 "Liquid Glass" dark theme aesthetic:
@@ -54,7 +67,7 @@ App works without API keys using mock data.
 - Mobile-first (max-width 448px)
 
 ### Build Optimization
-Vite config splits chunks: `vendor-three` (deferred), `vendor-react`, `vendor-ui`, `utils`
+Vite config splits chunks: `vendor-three` (deferred), `vendor-react`, `vendor-ui`, `vendor-webllm` (future local AI), `utils`
 
 ## Environment Variables
 
@@ -68,9 +81,10 @@ VITE_SITE_URL=...            # For AI API headers
 
 ```
 src/
-├── components/     # React components (22 files)
+├── components/     # React components (23 files)
 │   └── onboarding/ # Onboarding wizard steps
-├── services/       # AI APIs (ai.ts, gemini.ts) + PDF generation
+├── contexts/       # React contexts (ModelContext for local AI)
+├── services/       # AI APIs (ai.ts, gemini.ts, localModel.ts) + PDF generation
 ├── utils/          # Data generation, export, predictions, transition analysis
 ├── locales/        # i18n translations (en.json, no.json)
 ├── test/           # Vitest setup and mocks

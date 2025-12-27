@@ -305,7 +305,7 @@ export default function ContextComparison({ onClose }: ContextComparisonProps) {
                                                     border: '1px solid rgba(255,255,255,0.1)',
                                                     borderRadius: '12px'
                                                 }}
-                                                formatter={(value: number) => [`${value}%`]}
+                                                formatter={(value) => [`${value ?? 0}%`]}
                                             />
                                             <Bar dataKey="home" name="Hjemme" fill="#06b6d4" radius={[0, 4, 4, 0]} />
                                             <Bar dataKey="school" name="Skole" fill="#a855f7" radius={[0, 4, 4, 0]} />

@@ -78,7 +78,8 @@ function isHourInUpcomingWindow(
 }
 
 /**
- * Calculate peak time with minute-level precision using weighted average.
+ * Calculate peak time with minute-level precision using circular mean.
+ * Uses circular statistics to properly handle times spanning midnight.
  * Weights incidents by arousal intensity for more accurate peak detection.
  */
 function calculatePeakTimeWithMinutes(
@@ -89,20 +90,33 @@ function calculatePeakTimeWithMinutes(
 
     if (highArousalLogs.length === 0) return null;
 
-    // Convert to minutes since midnight and calculate weighted average
-    let totalMinutes = 0;
+    // Use circular mean to properly handle times spanning midnight
+    // Convert time to angle (0-1440 minutes -> 0-2π radians)
+    const MINUTES_PER_DAY = 24 * 60;
+    let sinSum = 0;
+    let cosSum = 0;
     let totalWeight = 0;
 
     highArousalLogs.forEach(log => {
         const date = new Date(log.timestamp);
         const minutes = date.getHours() * 60 + date.getMinutes();
+        // Convert to angle in radians
+        const angle = (minutes / MINUTES_PER_DAY) * 2 * Math.PI;
         // Weight by arousal intensity (higher arousal = more weight)
         const weight = log.arousal - highArousalThreshold + 1;
-        totalMinutes += minutes * weight;
+
+        sinSum += Math.sin(angle) * weight;
+        cosSum += Math.cos(angle) * weight;
         totalWeight += weight;
     });
 
-    const avgMinutes = Math.round(totalMinutes / totalWeight);
+    // Calculate circular mean angle
+    const avgAngle = Math.atan2(sinSum / totalWeight, cosSum / totalWeight);
+
+    // Convert back to minutes (handle negative angles)
+    let avgMinutes = Math.round((avgAngle / (2 * Math.PI)) * MINUTES_PER_DAY);
+    if (avgMinutes < 0) avgMinutes += MINUTES_PER_DAY;
+
     return {
         hour: Math.floor(avgMinutes / 60) % 24,
         minute: avgMinutes % 60,

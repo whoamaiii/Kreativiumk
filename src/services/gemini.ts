@@ -120,7 +120,7 @@ export const analyzeLogsWithGemini = async (
         result.modelUsed = MODEL_ID;
 
         // Cache the result
-        cache.set(result, logsHash);
+        cache.set(result, logsHash, 'regular');
 
         return result;
 
@@ -200,7 +200,7 @@ VIKTIG: Dette er en DYP ANALYSE. Bruk mer tid på å tenke gjennom sammenhenger.
 
         // Cache the result
         const logsHash = generateLogsHash(logs, crisisEvents);
-        cache.set(result, logsHash);
+        cache.set(result, logsHash, 'deep');
 
         return { ...result, modelUsed: PREMIUM_MODEL_ID };
 
@@ -289,7 +289,7 @@ export const analyzeLogsStreamingWithGemini = async (
 
             // Cache the result
             const logsHash = generateLogsHash(logs, crisisEvents);
-            cache.set(result, logsHash);
+            cache.set(result, logsHash, 'regular');
 
             return result;
 

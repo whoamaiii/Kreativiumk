@@ -113,14 +113,14 @@ export const BehaviorInsights: React.FC = () => {
     // Filter logs by date range
     const filteredLogs = useMemo(() => {
         const now = new Date();
-        const daysAgo = parseInt(dateRange, 10);
+        const daysAgo = parseInt(dateRange, 10) || 30; // Fallback to 30 if NaN
         const startDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
         return logs.filter(log => new Date(log.timestamp) >= startDate);
     }, [logs, dateRange]);
 
     const filteredCrisis = useMemo(() => {
         const now = new Date();
-        const daysAgo = parseInt(dateRange, 10);
+        const daysAgo = parseInt(dateRange, 10) || 30; // Fallback to 30 if NaN
         const startDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
         return crisisEvents
             .filter(event => new Date(event.timestamp) >= startDate)

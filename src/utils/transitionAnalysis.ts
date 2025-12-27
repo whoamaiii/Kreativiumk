@@ -159,6 +159,21 @@ function capHistory(
 // ============================================================================
 
 /**
+ * Get the Monday of the week for a given date.
+ * Uses UTC to avoid timezone issues at month/year boundaries.
+ */
+function getMondayOfWeek(date: Date): Date {
+    const d = new Date(date);
+    const day = d.getDay();
+    // Calculate days to subtract to get to Monday (day 0 = Sunday, so Sunday needs -6)
+    const daysToMonday = day === 0 ? 6 : day - 1;
+    d.setDate(d.getDate() - daysToMonday);
+    // Reset time to midnight to ensure consistent comparison
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+/**
  * Calculate weekly summaries from difficulty entries
  */
 function calculateWeeklySummary(
@@ -168,11 +183,7 @@ function calculateWeeklySummary(
 
     entries.forEach(entry => {
         const date = new Date(entry.date);
-        // Get Monday of the week
-        const dayOfWeek = date.getDay();
-        const diff = date.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-        const monday = new Date(date);
-        monday.setDate(diff);
+        const monday = getMondayOfWeek(date);
         const weekKey = monday.toISOString().split('T')[0];
 
         const existing = weekMap.get(weekKey) ?? { total: 0, count: 0 };
