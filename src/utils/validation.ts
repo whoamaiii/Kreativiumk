@@ -251,48 +251,6 @@ export function validateCrisisEvent(data: unknown): { success: true; data: z.inf
 }
 
 /**
- * Validates a child profile
- */
-export function validateChildProfile(data: unknown): { success: true; data: z.infer<typeof ChildProfileSchema> } | { success: false; errors: string[] } {
-    const result = ChildProfileSchema.safeParse(data);
-    if (result.success) {
-        return { success: true, data: result.data };
-    }
-    return {
-        success: false,
-        errors: result.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`),
-    };
-}
-
-/**
- * Validates a goal
- */
-export function validateGoal(data: unknown): { success: true; data: z.infer<typeof GoalSchema> } | { success: false; errors: string[] } {
-    const result = GoalSchema.safeParse(data);
-    if (result.success) {
-        return { success: true, data: result.data };
-    }
-    return {
-        success: false,
-        errors: result.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`),
-    };
-}
-
-/**
- * Validates an AI analysis result
- */
-export function validateAnalysisResult(data: unknown): { success: true; data: z.infer<typeof AnalysisResultSchema> } | { success: false; errors: string[] } {
-    const result = AnalysisResultSchema.safeParse(data);
-    if (result.success) {
-        return { success: true, data: result.data };
-    }
-    return {
-        success: false,
-        errors: result.error.issues.map((e) => `${e.path.join('.')}: ${e.message}`),
-    };
-}
-
-/**
  * Validates imported data structure
  */
 export const ImportedDataSchema = z.object({

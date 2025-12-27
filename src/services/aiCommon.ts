@@ -169,7 +169,14 @@ export function createAnalysisCache() {
                 return null;
             }
 
-            return entry.result;
+            // Validate cache entry structure
+            const result = entry.result;
+            if (!result?.summary || !Array.isArray(result?.recommendations)) {
+                cacheMap.delete(key);
+                return null;
+            }
+
+            return result;
         },
 
         set(result: AnalysisResult, logsHash: string, analysisType?: 'regular' | 'deep'): void {

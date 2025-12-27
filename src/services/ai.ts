@@ -8,6 +8,13 @@ import {
     clearGeminiCache
 } from './gemini';
 import {
+    analyzeLogsWithLocalModel,
+    analyzeLogsDeepWithLocalModel,
+    analyzeLogsStreamingWithLocalModel,
+    getModelStatus,
+    clearLocalModelCache
+} from './localModel';
+import {
     generateLogsHash,
     createAnalysisCache,
     getLogsDateRange,
@@ -23,12 +30,40 @@ import {
 // CONFIGURATION
 // =============================================================================
 
-// Use Gemini as primary (for Kaggle competition), fallback to OpenRouter
-const USE_GEMINI_PRIMARY = true;
+// Offline-first: Use local model as primary
+// NOTE: Disabled while fine-tuned model is being prepared
+const USE_LOCAL_MODEL_PRIMARY = false;
+
+// Fallback to cloud APIs if local model not loaded
+const USE_GEMINI_FALLBACK = true;
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
 const SITE_URL = import.meta.env.VITE_SITE_URL || 'http://localhost:5173';
 const SITE_NAME = 'NeuroLogg Pro';
+
+// =============================================================================
+// ERROR REPORTING
+// =============================================================================
+
+/**
+ * Reports errors to logging service in production
+ * In development, logs to console for debugging
+ * @internal Reserved for future Sentry/LogRocket integration
+ */
+ 
+export function reportAIError(error: Error, context: Record<string, unknown>): void {
+    if (import.meta.env.PROD) {
+        // Future: Send to Sentry/LogRocket/custom error service
+        console.error('[AI Error]', {
+            message: error.message,
+            stack: error.stack,
+            ...context,
+            timestamp: new Date().toISOString()
+        });
+    } else {
+        console.error('[AI Error]', error.message, context);
+    }
+}
 
 // =============================================================================
 // MODEL CONFIGURATION
@@ -70,6 +105,7 @@ const API_CONFIG = {
     // Streaming retry configuration
     maxStreamingRetries: 2,
     streamingRetryDelayMs: 1500,
+    streamReadTimeoutMs: 60000,  // Stream read timeout: 60 seconds
 
     // Token limits
     maxTokensFree: 4000,
@@ -124,6 +160,36 @@ export interface RetryCallback {
 const cache = createAnalysisCache();
 
 // =============================================================================
+// REQUEST DEDUPLICATION
+// =============================================================================
+// Prevents duplicate API calls when user clicks analyze multiple times rapidly
+const pendingRequests = new Map<string, Promise<AnalysisResult>>();
+
+/**
+ * Deduplicates concurrent requests with the same key
+ * If a request with the same key is already in progress, returns the existing promise
+ */
+function deduplicatedRequest<T extends AnalysisResult>(
+    key: string,
+    requestFn: () => Promise<T>
+): Promise<T> {
+    const existing = pendingRequests.get(key);
+    if (existing) {
+        if (import.meta.env.DEV) {
+            console.log(`[AI] Request deduplicated: ${key}`);
+        }
+        return existing as Promise<T>;
+    }
+
+    const promise = requestFn().finally(() => {
+        pendingRequests.delete(key);
+    });
+
+    pendingRequests.set(key, promise);
+    return promise;
+}
+
+// =============================================================================
 // API COMMUNICATION
 // =============================================================================
 
@@ -163,10 +229,18 @@ const callOpenRouter = async (
 
         if (!response.ok) {
             const errorText = await response.text();
-            if (import.meta.env.DEV) {
-                console.error(`OpenRouter API Error (${modelId}):`, response.status, errorText);
+            // Try to parse as JSON for better error messages
+            let errorMsg = errorText;
+            try {
+                const errorJson = JSON.parse(errorText);
+                errorMsg = errorJson.error?.message || errorJson.message || errorText;
+            } catch {
+                // Keep raw error text
             }
-            throw new Error(`API Error ${response.status}: ${errorText}`);
+            if (import.meta.env.DEV) {
+                console.error(`OpenRouter API Error (${modelId}):`, response.status, errorMsg);
+            }
+            throw new Error(`OpenRouter: ${errorMsg} (${response.status})`);
         }
 
         const data = await response.json() as OpenRouterResponse;
@@ -263,7 +337,15 @@ const callOpenRouterStreaming = async (
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`API Error ${response.status}: ${errorText}`);
+            // Try to parse as JSON for better error messages
+            let errorMsg = errorText;
+            try {
+                const errorJson = JSON.parse(errorText);
+                errorMsg = errorJson.error?.message || errorJson.message || errorText;
+            } catch {
+                // Keep raw error text
+            }
+            throw new Error(`OpenRouter streaming: ${errorMsg} (${response.status})`);
         }
 
         const reader = response.body?.getReader();
@@ -275,38 +357,51 @@ const callOpenRouterStreaming = async (
         let fullText = '';
         let buffer = '';
 
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
+        // Stream read with timeout protection
+        const readStreamWithTimeout = async (): Promise<string> => {
+            const streamTimeout = new Promise<never>((_, reject) => {
+                setTimeout(() => reject(new Error('Stream read timeout after 60 seconds')), API_CONFIG.streamReadTimeoutMs);
+            });
 
-            buffer += decoder.decode(value, { stream: true });
+            const readLoop = async (): Promise<string> => {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
 
-            // Parse SSE format: data: {"choices":[{"delta":{"content":"..."}}]}
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || ''; // Keep incomplete line in buffer
+                    buffer += decoder.decode(value, { stream: true });
 
-            for (const line of lines) {
-                const trimmed = line.trim();
-                if (!trimmed || !trimmed.startsWith('data: ')) continue;
+                    // Parse SSE format: data: {"choices":[{"delta":{"content":"..."}}]}
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || ''; // Keep incomplete line in buffer
 
-                const json = trimmed.slice(6); // Remove "data: " prefix
-                if (json === '[DONE]') continue;
+                    for (const line of lines) {
+                        const trimmed = line.trim();
+                        if (!trimmed || !trimmed.startsWith('data: ')) continue;
 
-                try {
-                    const parsed = JSON.parse(json);
-                    const content = parsed.choices?.[0]?.delta?.content || '';
-                    if (content) {
-                        fullText += content;
-                        callbacks.onChunk?.(content);
+                        const json = trimmed.slice(6); // Remove "data: " prefix
+                        if (json === '[DONE]') continue;
+
+                        try {
+                            const parsed = JSON.parse(json);
+                            const content = parsed.choices?.[0]?.delta?.content || '';
+                            if (content) {
+                                fullText += content;
+                                callbacks.onChunk?.(content);
+                            }
+                        } catch {
+                            // Skip malformed JSON chunks
+                        }
                     }
-                } catch {
-                    // Skip malformed JSON chunks
                 }
-            }
-        }
+                return fullText;
+            };
 
-        callbacks.onComplete?.(fullText);
-        return fullText;
+            return Promise.race([readLoop(), streamTimeout]);
+        };
+
+        const result = await readStreamWithTimeout();
+        callbacks.onComplete?.(result);
+        return result;
     } finally {
         clearTimeout(timeoutId);
     }
@@ -389,11 +484,22 @@ export const analyzeLogsStreamingWithOpenRouter = async (
         }
     }
 
-    // All retries failed
-    if (callbacks.onError && lastError) {
-        callbacks.onError(lastError);
+    // All retries failed - fallback to non-streaming
+    if (import.meta.env.DEV) {
+        console.warn('[OpenRouter] Streaming failed, falling back to non-streaming');
     }
-    throw lastError || new Error('Streaming failed after retries');
+
+    try {
+        const result = await analyzeLogs(logs, crisisEvents, options);
+        callbacks.onComplete?.(result.summary || '');
+        return result;
+    } catch (fallbackError) {
+        // Both streaming and non-streaming failed
+        if (callbacks.onError) {
+            callbacks.onError(lastError || fallbackError as Error);
+        }
+        throw lastError || fallbackError;
+    }
 };
 
 // =============================================================================
@@ -487,7 +593,7 @@ utgjør en "perfekt storm" for overbelastning.`,
 
 /**
  * Analyzes log entries and crisis events
- * Uses Gemini 3 Pro as primary (for Kaggle competition), falls back to OpenRouter
+ * Uses local WebLLM model as primary (offline-first), falls back to cloud APIs
  *
  * @param logs - Array of log entries to analyze
  * @param crisisEvents - Optional array of crisis events for deeper analysis
@@ -504,11 +610,29 @@ export const analyzeLogs = async (
         throw new Error('No logs provided for analysis');
     }
 
-    // Try Gemini first (for Kaggle competition)
-    if (USE_GEMINI_PRIMARY && isGeminiConfigured()) {
+    // Deduplicate concurrent requests
+    const dedupeKey = `regular:${generateLogsHash(logs, crisisEvents)}`;
+    return deduplicatedRequest(dedupeKey, async () => {
+    // Try local model first (offline-first approach)
+    if (USE_LOCAL_MODEL_PRIMARY && getModelStatus().loaded) {
         try {
             if (import.meta.env.DEV) {
-                console.log('[AI] Using Gemini 3 Pro as primary...');
+                console.log('[AI] Using local WebLLM model as primary...');
+            }
+            return await analyzeLogsWithLocalModel(logs, crisisEvents, options);
+        } catch (localError) {
+            if (import.meta.env.DEV) {
+                console.warn('[AI] Local model failed, falling back to cloud:', localError);
+            }
+            // Fall through to cloud APIs
+        }
+    }
+
+    // Fallback to Gemini if local model not available
+    if (USE_GEMINI_FALLBACK && isGeminiConfigured()) {
+        try {
+            if (import.meta.env.DEV) {
+                console.log('[AI] Using Gemini as fallback...');
             }
             return await analyzeLogsWithGemini(logs, crisisEvents, options);
         } catch (geminiError) {
@@ -597,11 +721,12 @@ export const analyzeLogs = async (
         }
         throw new Error(`Failed to analyze logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+    }); // End of deduplicatedRequest
 };
 
 /**
- * Performs DEEP analysis using premium models
- * Uses Gemini 2.5 Pro as primary (for Kaggle competition), falls back to OpenRouter
+ * Performs DEEP analysis using local model or premium cloud models
+ * Uses local WebLLM model as primary (offline-first), falls back to cloud APIs
  */
 export const analyzeLogsDeep = async (
     logs: LogEntry[],
@@ -613,8 +738,26 @@ export const analyzeLogsDeep = async (
         throw new Error('No logs provided for analysis');
     }
 
-    // Try Gemini first (for Kaggle competition)
-    if (USE_GEMINI_PRIMARY && isGeminiConfigured()) {
+    // Deduplicate concurrent requests
+    const dedupeKey = `deep:${generateLogsHash(logs, crisisEvents)}`;
+    return deduplicatedRequest(dedupeKey, async () => {
+    // Try local model first (offline-first approach)
+    if (USE_LOCAL_MODEL_PRIMARY && getModelStatus().loaded) {
+        try {
+            if (import.meta.env.DEV) {
+                console.log('[AI] Using local WebLLM model for deep analysis...');
+            }
+            return await analyzeLogsDeepWithLocalModel(logs, crisisEvents, options);
+        } catch (localError) {
+            if (import.meta.env.DEV) {
+                console.warn('[AI] Local model deep analysis failed, falling back to cloud:', localError);
+            }
+            // Fall through to cloud APIs
+        }
+    }
+
+    // Fallback to Gemini if local model not available
+    if (USE_GEMINI_FALLBACK && isGeminiConfigured()) {
         try {
             if (import.meta.env.DEV) {
                 console.log('[AI] Using Gemini 2.5 Pro for deep analysis...');
@@ -664,7 +807,6 @@ VIKTIG: Dette er en DYP ANALYSE. Bruk mer tid på å tenke gjennom sammenhenger.
     ];
 
     // Try each premium model in order until one succeeds
-    let lastError: Error | null = null;
     let modelUsed: string | null = null;
 
     for (const modelId of PREMIUM_MODELS) {
@@ -707,7 +849,6 @@ VIKTIG: Dette er en DYP ANALYSE. Bruk mer tid på å tenke gjennom sammenhenger.
             return finalResult;
 
         } catch (error) {
-            lastError = error as Error;
             if (import.meta.env.DEV) {
                 console.warn(`[OpenRouter] ${modelId} failed:`, error);
             }
@@ -715,11 +856,47 @@ VIKTIG: Dette er en DYP ANALYSE. Bruk mer tid på å tenke gjennom sammenhenger.
         }
     }
 
-    // All models failed
+    // All premium models failed - fallback to FREE_MODEL
     if (import.meta.env.DEV) {
-        console.error('All premium models failed for deep analysis');
+        console.warn('[AI] All premium models failed, falling back to FREE_MODEL');
     }
-    throw new Error(`Deep analysis failed: ${lastError?.message || 'All premium models unavailable'}`);
+
+    try {
+        const response = await callWithRetry(messages, FREE_MODEL_ID, false);
+
+        const content = response.choices[0]?.message?.content;
+        if (!content) {
+            throw new Error('Empty response from AI service');
+        }
+
+        const result = parseAnalysisResponse(content);
+
+        // Add metadata (downgraded analysis)
+        result.dateRangeStart = dateRangeStart;
+        result.dateRangeEnd = dateRangeEnd;
+        result.isDeepAnalysis = false; // Downgraded
+
+        modelUsed = FREE_MODEL_ID;
+        const finalResult = { ...result, modelUsed };
+
+        // Cache the result
+        const logsHash = generateLogsHash(logs, crisisEvents);
+        cache.set(finalResult, logsHash, 'regular'); // Cache as regular since it's downgraded
+
+        if (import.meta.env.DEV) {
+            console.log(`[AI] Deep analysis downgraded to FREE_MODEL (${FREE_MODEL_ID})`);
+        }
+
+        return finalResult;
+
+    } catch {
+        // Final fallback: return mock data
+        if (import.meta.env.DEV) {
+            console.error('All models including FREE_MODEL failed for deep analysis');
+        }
+        return generateMockAnalysis();
+    }
+    }); // End of deduplicatedRequest
 };
 
 /**
@@ -728,6 +905,7 @@ VIKTIG: Dette er en DYP ANALYSE. Bruk mer tid på å tenke gjennom sammenhenger.
 export const clearAnalysisCache = (): void => {
     cache.clear();
     clearGeminiCache();
+    clearLocalModelCache();
 };
 
 /**
@@ -739,20 +917,25 @@ export const getApiStatus = (): {
     premiumModel: string;
     geminiConfigured: boolean;
     geminiModel?: string;
+    localModelLoaded: boolean;
+    localModelId?: string;
 } => {
     const geminiStatus = getGeminiStatus();
+    const localStatus = getModelStatus();
     return {
-        configured: Boolean(OPENROUTER_API_KEY) || geminiStatus.configured,
+        configured: localStatus.loaded || Boolean(OPENROUTER_API_KEY) || geminiStatus.configured,
         freeModel: FREE_MODEL_ID,
         premiumModel: PREMIUM_MODEL_ID,
         geminiConfigured: geminiStatus.configured,
         geminiModel: geminiStatus.model,
+        localModelLoaded: localStatus.loaded,
+        localModelId: localStatus.modelId || undefined,
     };
 };
 
 /**
  * Streaming analysis - Shows AI "thinking" in real-time for WOW factor
- * Uses Gemini as primary (for Kaggle competition), falls back to OpenRouter
+ * Uses local WebLLM model as primary (offline-first), falls back to cloud APIs
  */
 export const analyzeLogsStreaming = async (
     logs: LogEntry[],
@@ -760,11 +943,26 @@ export const analyzeLogsStreaming = async (
     callbacks: StreamCallbacks,
     options: { childProfile?: ChildProfile | null } = {}
 ): Promise<AnalysisResult> => {
-    // Try Gemini first (for Kaggle competition)
-    if (USE_GEMINI_PRIMARY && isGeminiConfigured()) {
+    // Try local model first (offline-first approach)
+    if (USE_LOCAL_MODEL_PRIMARY && getModelStatus().loaded) {
         try {
             if (import.meta.env.DEV) {
-                console.log('[AI] Using Gemini streaming as primary...');
+                console.log('[AI] Using local WebLLM model for streaming analysis...');
+            }
+            return await analyzeLogsStreamingWithLocalModel(logs, crisisEvents, callbacks, options);
+        } catch (localError) {
+            if (import.meta.env.DEV) {
+                console.warn('[AI] Local model streaming failed, falling back to cloud:', localError);
+            }
+            // Fall through to cloud APIs
+        }
+    }
+
+    // Fallback to Gemini if local model not available
+    if (USE_GEMINI_FALLBACK && isGeminiConfigured()) {
+        try {
+            if (import.meta.env.DEV) {
+                console.log('[AI] Using Gemini streaming as fallback...');
             }
             return await analyzeLogsStreamingWithGemini(logs, crisisEvents, callbacks, options);
         } catch (geminiError) {

@@ -59,7 +59,7 @@ export const analyzeLogsWithGemini = async (
     // Check cache first
     const logsHash = generateLogsHash(logs, crisisEvents);
     if (!options.forceRefresh) {
-        const cached = cache.get(logsHash);
+        const cached = cache.get(logsHash, 'regular');
         if (cached) {
             if (import.meta.env.DEV) {
                 console.log('[Gemini] Returning cached analysis');

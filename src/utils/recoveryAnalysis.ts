@@ -24,8 +24,9 @@ import {
 
 /**
  * Auto-detect recovery time from subsequent logs after a crisis
+ * (Internal helper - used by analyzeRecoveryPatterns)
  */
-export function detectRecoveryFromLogs(
+function detectRecoveryFromLogs(
     crisisEvent: CrisisEvent,
     logs: LogEntry[],
     config: Partial<RecoveryAnalysisConfig> = {}
@@ -102,8 +103,9 @@ function getEffectiveRecoveryTime(
 
 /**
  * Calculate post-crisis vulnerability window
+ * (Internal helper - used by analyzeRecoveryPatterns)
  */
-export function calculateVulnerabilityWindow(
+function calculateVulnerabilityWindow(
     crisisEvents: CrisisEvent[],
     _logs: LogEntry[],
     config: Partial<RecoveryAnalysisConfig> = {}
@@ -175,8 +177,9 @@ interface FactorGroup {
 
 /**
  * Analyze which factors correlate with faster or slower recovery
+ * (Internal helper - used by analyzeRecoveryPatterns)
  */
-export function analyzeRecoveryFactors(
+function analyzeRecoveryFactors(
     crisisEvents: CrisisEvent[],
     logs: LogEntry[],
     config: Partial<RecoveryAnalysisConfig> = {}
@@ -298,8 +301,9 @@ export function analyzeRecoveryFactors(
 
 /**
  * Calculate recovery statistics grouped by crisis type
+ * (Internal helper - used by analyzeRecoveryPatterns)
  */
-export function calculateRecoveryByType(
+function calculateRecoveryByType(
     crisisEvents: CrisisEvent[],
     logs: LogEntry[],
     config: Partial<RecoveryAnalysisConfig> = {}
