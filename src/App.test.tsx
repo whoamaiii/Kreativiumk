@@ -1,10 +1,24 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { type BrowserRouterProps } from 'react-router-dom';
 import App from './App';
-import { DataProvider } from './store';
-import { ToastProvider } from './components/Toast';
 import React, { type ReactNode } from 'react';
+
+// Track initial route for tests
+let testInitialRoute = '/';
+
+// Mock react-router-dom to replace BrowserRouter with MemoryRouter
+vi.mock('react-router-dom', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('react-router-dom')>();
+    return {
+        ...actual,
+        BrowserRouter: ({ children }: BrowserRouterProps) => (
+            <actual.MemoryRouter initialEntries={[testInitialRoute]}>
+                {children}
+            </actual.MemoryRouter>
+        ),
+    };
+});
 
 // Mock framer-motion to avoid animation issues in tests
 vi.mock('framer-motion', () => {
@@ -178,17 +192,10 @@ const localStorageMock = (() => {
 
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
-// Helper to render App with MemoryRouter for testing specific routes
+// Helper to render App with a specific route
 const renderAppWithRoute = (initialRoute: string = '/') => {
-    return render(
-        <MemoryRouter initialEntries={[initialRoute]}>
-            <DataProvider>
-                <ToastProvider>
-                    <App />
-                </ToastProvider>
-            </DataProvider>
-        </MemoryRouter>
-    );
+    testInitialRoute = initialRoute;
+    return render(<App />);
 };
 
 describe('App Component', () => {
@@ -196,6 +203,7 @@ describe('App Component', () => {
         localStorageMock.clear();
         vi.clearAllMocks();
         mockOnboardingCompleted = false;
+        testInitialRoute = '/';
     });
 
     describe('App Structure', () => {
@@ -216,8 +224,7 @@ describe('App Component', () => {
         });
     });
 
-    // Onboarding flow tests skipped - nested router issue with jsdom/happy-dom
-    describe.skip('Onboarding Flow', () => {
+    describe('Onboarding Flow', () => {
         it('redirects to onboarding when not completed', async () => {
             mockOnboardingCompleted = false;
             renderAppWithRoute('/');
@@ -227,10 +234,7 @@ describe('App Component', () => {
         });
     });
 
-    // Route navigation tests skipped - nested router issue with jsdom/happy-dom
-    // These tests require a more complex router mock setup
-    // The routes themselves are tested indirectly through component integration tests
-    describe.skip('Route Navigation', () => {
+    describe('Route Navigation', () => {
         beforeEach(() => {
             mockOnboardingCompleted = true;
         });
@@ -244,8 +248,7 @@ describe('App Component', () => {
         });
     });
 
-    // Layout tests skipped - nested router issue with jsdom/happy-dom
-    describe.skip('Layout Components', () => {
+    describe('Layout Components', () => {
         beforeEach(() => {
             mockOnboardingCompleted = true;
         });
@@ -259,8 +262,7 @@ describe('App Component', () => {
         });
     });
 
-    // Loading tests skipped - nested router issue with jsdom/happy-dom
-    describe.skip('Loading States', () => {
+    describe('Loading States', () => {
         beforeEach(() => {
             mockOnboardingCompleted = true;
         });
@@ -316,10 +318,7 @@ describe('CSSBackground Component', () => {
     });
 });
 
-// All tests below use renderAppWithRoute which has nested router issues with jsdom/happy-dom
-// These are skipped - the routes themselves are tested through component integration tests
-
-describe.skip('SkeletonPulse Component', () => {
+describe('SkeletonPulse Component', () => {
     it('applies animate-pulse class for skeleton loading effect', async () => {
         mockOnboardingCompleted = true;
         const { container } = renderAppWithRoute('/');
@@ -330,7 +329,7 @@ describe.skip('SkeletonPulse Component', () => {
     });
 });
 
-describe.skip('LogEntryFormWrapper', () => {
+describe('LogEntryFormWrapper', () => {
     it('renders LogEntryForm with close handler', async () => {
         mockOnboardingCompleted = true;
         renderAppWithRoute('/log');
@@ -340,7 +339,7 @@ describe.skip('LogEntryFormWrapper', () => {
     });
 });
 
-describe.skip('ProtectedRoute Component', () => {
+describe('ProtectedRoute Component', () => {
     it('renders Outlet when onboarding is completed', async () => {
         mockOnboardingCompleted = true;
         renderAppWithRoute('/dashboard');
@@ -350,7 +349,7 @@ describe.skip('ProtectedRoute Component', () => {
     });
 });
 
-describe.skip('OnboardingRoute Component', () => {
+describe('OnboardingRoute Component', () => {
     it('shows onboarding wizard when not completed', async () => {
         mockOnboardingCompleted = false;
         renderAppWithRoute('/onboarding');
@@ -360,7 +359,7 @@ describe.skip('OnboardingRoute Component', () => {
     });
 });
 
-describe.skip('ProtectedLayout Component', () => {
+describe('ProtectedLayout Component', () => {
     it('renders BackgroundShader', async () => {
         mockOnboardingCompleted = true;
         renderAppWithRoute('/');
