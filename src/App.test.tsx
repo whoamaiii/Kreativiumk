@@ -44,26 +44,32 @@ vi.mock('framer-motion', () => {
 });
 
 // Mock react-i18next
-vi.mock('react-i18next', () => ({
-    useTranslation: () => ({
-        t: (key: string, fallback?: string | object) => {
-            if (typeof fallback === 'object' && fallback !== null) {
-                return key;
-            }
-            return typeof fallback === 'string' ? fallback : key;
+vi.mock('react-i18next', () => {
+    const mockT = (key: string, fallback?: string | object) => {
+        if (typeof fallback === 'object' && fallback !== null) return key;
+        return typeof fallback === 'string' ? fallback : key;
+    };
+    const mockI18n = { language: 'en', changeLanguage: () => Promise.resolve() };
+
+    return {
+        useTranslation: () => ({ t: mockT, i18n: mockI18n }),
+        // withTranslation HOC wraps component and injects t, i18n, tReady props
+        withTranslation: () => (WrappedComponent: React.ComponentType<Record<string, unknown>>) => {
+            const WithTranslationWrapper = (props: Record<string, unknown>) => {
+                return React.createElement(WrappedComponent, {
+                    ...props,
+                    t: mockT,
+                    i18n: mockI18n,
+                    tReady: true,
+                });
+            };
+            WithTranslationWrapper.displayName = `withTranslation(${WrappedComponent.displayName || WrappedComponent.name || 'Component'})`;
+            return WithTranslationWrapper;
         },
-        i18n: {
-            language: 'en',
-            changeLanguage: vi.fn(),
-        },
-    }),
-    withTranslation: () => <T extends React.ComponentType<unknown>>(Component: T) => Component,
-    Trans: ({ children }: { children: ReactNode }) => <>{children}</>,
-    initReactI18next: {
-        type: '3rdParty',
-        init: vi.fn(),
-    },
-}));
+        Trans: ({ children }: { children: React.ReactNode }) => children,
+        initReactI18next: { type: '3rdParty', init: () => {} },
+    };
+});
 
 // Mock Toast components
 vi.mock('./components/Toast', () => ({

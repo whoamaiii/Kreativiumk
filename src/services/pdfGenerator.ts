@@ -1,16 +1,29 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { nb } from 'date-fns/locale';
 import type { LogEntry, CrisisEvent, AnalysisResult } from '../types';
 import { getModelDisplayName } from '../utils/modelUtils';
 import { PDF_LAYOUT } from './pdfConstants';
+import type jsPDF from 'jspdf';
 
 // Augment jsPDF with autoTable for TypeScript
 declare module 'jspdf' {
     interface jsPDF {
         lastAutoTable: { finalY: number };
     }
+}
+
+// Dynamic import helper - loaded on first use
+let jsPDFModule: typeof import('jspdf') | null = null;
+let autoTableModule: typeof import('jspdf-autotable') | null = null;
+
+async function loadPDFLibraries() {
+    if (!jsPDFModule || !autoTableModule) {
+        [jsPDFModule, autoTableModule] = await Promise.all([
+            import('jspdf'),
+            import('jspdf-autotable')
+        ]);
+    }
+    return { jsPDF: jsPDFModule.default, autoTable: autoTableModule.default };
 }
 
 interface PDFGeneratorOptions {
@@ -221,13 +234,16 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 // MAIN PDF GENERATOR
 // =============================================================================
 
-export const generatePDF = (
+export const generatePDF = async (
     logs: LogEntry[],
     crisisEvents: CrisisEvent[],
     analysisResult?: AnalysisResult | null,
     options: PDFGeneratorOptions = {}
-) => {
+): Promise<void> => {
     const { margin, fonts, spacing, colors, pageBreak, table } = PDF_LAYOUT;
+
+    // Dynamically load PDF libraries on first use
+    const { jsPDF, autoTable } = await loadPDFLibraries();
 
     // 1. Initialize Document
     const doc = new jsPDF();
