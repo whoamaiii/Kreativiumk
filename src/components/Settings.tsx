@@ -319,7 +319,7 @@ export const Settings: React.FC = () => {
                             <input
                                 type="text"
                                 value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                onChange={(e) => setName(e.target.value.slice(0, 50))}
                                 placeholder={t('settings.namePlaceholder')}
                                 maxLength={50}
                                 className="w-full bg-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary"

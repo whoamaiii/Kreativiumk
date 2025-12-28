@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
     Brain, Activity, Settings, Clock, Database, Check,
@@ -62,23 +62,23 @@ export const Home: React.FC = () => {
     const activeContainerVariants = prefersReducedMotion ? containerVariantsReduced : containerVariants;
     const activeItemVariants = prefersReducedMotion ? itemVariantsReduced : itemVariants;
 
-    const handleLoadMockData = useCallback(() => {
+    const handleLoadMockData = () => {
         loadMockData();
         setMockDataLoaded(true);
         setMockDataCleared(false);
         refreshData();
         showSuccess(t('home.mockDataLoaded', 'Test data loaded successfully'));
         setTimeout(() => setMockDataLoaded(false), 2000);
-    }, [refreshData, showSuccess, t]);
+    };
 
-    const handleClearMockData = useCallback(() => {
+    const handleClearMockData = () => {
         clearMockData();
         setMockDataCleared(true);
         setMockDataLoaded(false);
         refreshData();
         showSuccess(t('home.mockDataCleared', 'Test data cleared'));
         setTimeout(() => setMockDataCleared(false), 2000);
-    }, [refreshData, showSuccess, t]);
+    };
 
     const toggleLanguage = () => {
         i18n.changeLanguage(i18n.language === 'no' ? 'en' : 'no');
