@@ -10,6 +10,12 @@ import { z } from 'zod';
 export const STORAGE_ERROR_EVENT = 'storage-quota-exceeded';
 
 /**
+ * Custom event to trigger data refresh across all providers.
+ * Dispatched by refreshData() to reload all contexts from localStorage.
+ */
+export const STORAGE_REFRESH_EVENT = 'storage-refresh-all';
+
+/**
  * Safely retrieves and parses an item from localStorage with optional Zod validation.
  * For arrays, invalid items are filtered out rather than returning the fallback.
  */

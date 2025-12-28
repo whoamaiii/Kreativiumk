@@ -21,8 +21,8 @@ import { AppProvider, useAppContext, AppContext } from './app';
 import { ChildProfileProvider, useChildProfile, ChildProfileContext } from './childProfile';
 import { SettingsProvider, useSettings, SettingsContext } from './settings';
 
-// Re-export storage helpers and event
-export { STORAGE_ERROR_EVENT, safeSetItem, getStorageItem, getStorageContext, safeRemoveItem } from './storage';
+// Re-export storage helpers and events
+export { STORAGE_ERROR_EVENT, STORAGE_REFRESH_EVENT, safeSetItem, getStorageItem, getStorageContext, safeRemoveItem } from './storage';
 
 // Re-export all hooks for convenient access
 export { useLogs, useCrisis, useSchedule, useGoals, useAppContext, useChildProfile, useSettings };

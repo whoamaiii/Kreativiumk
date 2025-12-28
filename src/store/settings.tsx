@@ -1,9 +1,10 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Settings Context - Manages onboarding state and data refresh
  */
 import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react';
 import { STORAGE_KEYS } from '../constants/storage';
-import { getStorageItem, safeSetItem } from './storage';
+import { getStorageItem, safeSetItem, STORAGE_REFRESH_EVENT } from './storage';
 import type { SettingsContextType } from './types';
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -22,12 +23,13 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         safeSetItem(STORAGE_KEYS.ONBOARDING_COMPLETED, JSON.stringify(true));
     }, []);
 
-    // refreshData is a no-op now - each context handles its own storage sync
-    // Kept for backwards compatibility with existing code that calls it
+    // refreshData triggers a reload of all contexts from localStorage
+    // This is used after importing data or loading mock data
     const refreshData = useCallback(() => {
-        // Each individual provider handles its own multi-tab sync
-        // This function is kept for backwards compatibility
+        // Refresh local settings state
         setHasCompletedOnboarding(getStorageItem(STORAGE_KEYS.ONBOARDING_COMPLETED, false));
+        // Dispatch event for all other providers to refresh
+        window.dispatchEvent(new CustomEvent(STORAGE_REFRESH_EVENT));
     }, []);
 
     const value = useMemo<SettingsContextType>(() => ({

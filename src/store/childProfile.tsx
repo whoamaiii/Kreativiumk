@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Child Profile Context - Manages child profile with diagnoses and strategies
  */
@@ -6,7 +7,7 @@ import type { ChildProfile } from '../types';
 import { STORAGE_KEYS } from '../constants/storage';
 import { ChildProfileSchema } from '../utils/validation';
 import { generateUUID } from '../utils/uuid';
-import { getStorageItem, safeSetItem, safeRemoveItem } from './storage';
+import { getStorageItem, safeSetItem, safeRemoveItem, STORAGE_REFRESH_EVENT } from './storage';
 import type { ChildProfileContextType } from './types';
 
 const ChildProfileContext = createContext<ChildProfileContextType | undefined>(undefined);
@@ -20,7 +21,7 @@ export const ChildProfileProvider: React.FC<ChildProfileProviderProps> = ({ chil
         getStorageItem(STORAGE_KEYS.CHILD_PROFILE, null, ChildProfileSchema.nullable())
     );
 
-    // Multi-tab sync for child profile
+    // Multi-tab sync and refresh event handling
     useEffect(() => {
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key !== STORAGE_KEYS.CHILD_PROFILE || !e.newValue) return;
@@ -36,8 +37,17 @@ export const ChildProfileProvider: React.FC<ChildProfileProviderProps> = ({ chil
                 // Ignore parse errors
             }
         };
+
+        const handleRefresh = () => {
+            setChildProfileState(getStorageItem(STORAGE_KEYS.CHILD_PROFILE, null, ChildProfileSchema.nullable()));
+        };
+
         window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
+        window.addEventListener(STORAGE_REFRESH_EVENT, handleRefresh);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener(STORAGE_REFRESH_EVENT, handleRefresh);
+        };
     }, []);
 
     const setChildProfile = useCallback((profile: ChildProfile) => {

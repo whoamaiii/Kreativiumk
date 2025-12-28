@@ -99,26 +99,27 @@ const probability = (p: number): boolean => Math.random() < p;
 // LOG GENERATION
 // =============================================================================
 
+// Use key-based values (imported from types.ts)
 const SENSORY_TRIGGERS: SensoryTrigger[] = [
-    'Auditiv', 'Visuell', 'Taktil', 'Vestibulær', 'Interosepsjon',
-    'Lukt', 'Smak', 'Lys', 'Temperatur', 'Trengsel'
+    'auditory', 'visual', 'tactile', 'vestibular', 'interoception',
+    'smell', 'taste', 'light', 'temperature', 'crowding'
 ];
 
 const CONTEXT_TRIGGERS: ContextTrigger[] = [
-    'Krav', 'Overgang', 'Sosialt', 'Uventet Hendelse', 'Sliten',
-    'Sult', 'Ventetid', 'Gruppearbeid', 'Prøve/Test', 'Ny Situasjon'
+    'demands', 'transition', 'social', 'unexpected_event', 'tired',
+    'hungry', 'waiting', 'group_work', 'test', 'new_situation'
 ];
 
 const STRATEGIES: Strategy[] = [
-    'Skjerming', 'Dypt Trykk', 'Samregulering', 'Pusting', 'Eget Rom',
-    'Vektteppe', 'Hodetelefoner', 'Fidget', 'Bevegelse', 'Mørkt Rom',
-    'Kjent Aktivitet', 'Musikk', 'Timer/Visuell Støtte'
+    'shielding', 'deep_pressure', 'co_regulation', 'breathing', 'own_room',
+    'weighted_blanket', 'headphones', 'fidget', 'movement', 'dark_room',
+    'familiar_activity', 'music', 'timer_visual_support'
 ];
 
 const WARNING_SIGNS: WarningSign[] = [
-    'Økt motorisk uro', 'Verbal eskalering', 'Tilbaketrekning',
-    'Repetitive bevegelser', 'Dekker ører', 'Unngår øyekontakt',
-    'Rødme/svetting', 'Klamrer seg', 'Nekter instrukser', 'Gråt'
+    'motor_restlessness', 'verbal_escalation', 'withdrawal',
+    'repetitive_movements', 'covers_ears', 'avoids_eye_contact',
+    'flushing_sweating', 'clinging', 'refuses_instructions', 'crying'
 ];
 
 function generateLogEntry(date: Date, context: ContextType): LogEntry {
@@ -306,8 +307,8 @@ function generateCrisisEvent(date: Date, context: ContextType, precedingLog?: Lo
     // Warning signs - more likely to include motor restlessness
     const numWarningSigns = randomInt(2, 4);
     let warningSigns: WarningSign[] = randomChoices(WARNING_SIGNS, numWarningSigns);
-    if (probability(0.8) && !warningSigns.includes('Økt motorisk uro')) {
-        warningSigns = ['Økt motorisk uro' as WarningSign, ...warningSigns];
+    if (probability(0.8) && !warningSigns.includes('motor_restlessness')) {
+        warningSigns = ['motor_restlessness', ...warningSigns];
     }
 
     // Triggers leading to crisis

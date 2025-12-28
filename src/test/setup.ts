@@ -2,6 +2,15 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import React from 'react';
 
+// Mock framer-motion to avoid animation issues in tests
+vi.mock('framer-motion', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('framer-motion')>();
+    return {
+        ...actual,
+        useReducedMotion: () => true, // Always prefer reduced motion in tests
+    };
+});
+
 // Mock react-i18next with withTranslation HOC
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({

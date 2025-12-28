@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Logs Context - Manages emotion/arousal log entries
  */
@@ -7,7 +8,7 @@ import type { LogEntry, ContextType } from '../types';
 import { enrichLogEntry } from '../types';
 import { STORAGE_KEYS } from '../constants/storage';
 import { LogEntrySchema, validateLogEntryInput } from '../utils/validation';
-import { getStorageItem, safeSetItem } from './storage';
+import { getStorageItem, safeSetItem, STORAGE_REFRESH_EVENT } from './storage';
 import type { LogsContextType } from './types';
 
 const LogsContext = createContext<LogsContextType | undefined>(undefined);
@@ -21,7 +22,7 @@ export const LogsProvider: React.FC<LogsProviderProps> = ({ children }) => {
         getStorageItem(STORAGE_KEYS.LOGS, [], z.array(LogEntrySchema))
     );
 
-    // Multi-tab sync for logs
+    // Multi-tab sync and refresh event handling
     useEffect(() => {
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key !== STORAGE_KEYS.LOGS || !e.newValue) return;
@@ -37,8 +38,18 @@ export const LogsProvider: React.FC<LogsProviderProps> = ({ children }) => {
                 // Ignore parse errors
             }
         };
+
+        // Handle refresh event from settings.refreshData()
+        const handleRefresh = () => {
+            setLogs(getStorageItem(STORAGE_KEYS.LOGS, [], z.array(LogEntrySchema)));
+        };
+
         window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
+        window.addEventListener(STORAGE_REFRESH_EVENT, handleRefresh);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener(STORAGE_REFRESH_EVENT, handleRefresh);
+        };
     }, []);
 
     const saveLogs = useCallback((newLogs: LogEntry[]) => {

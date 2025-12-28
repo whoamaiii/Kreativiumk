@@ -40,6 +40,7 @@ vi.mock('framer-motion', () => {
         useTransform: () => 0,
         useSpring: () => 0,
         useAnimation: () => ({ start: vi.fn(), stop: vi.fn() }),
+        useReducedMotion: () => true,
     };
 });
 

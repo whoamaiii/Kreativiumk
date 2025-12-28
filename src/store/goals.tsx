@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Goals Context - Manages IEP goal tracking with progress
  */
@@ -7,7 +8,7 @@ import type { Goal, GoalProgress, GoalStatus } from '../types';
 import { STORAGE_KEYS } from '../constants/storage';
 import { GoalSchema } from '../utils/validation';
 import { generateUUID } from '../utils/uuid';
-import { getStorageItem, safeSetItem } from './storage';
+import { getStorageItem, safeSetItem, STORAGE_REFRESH_EVENT } from './storage';
 import type { GoalsContextType } from './types';
 
 const GoalsContext = createContext<GoalsContextType | undefined>(undefined);
@@ -21,7 +22,7 @@ export const GoalsProvider: React.FC<GoalsProviderProps> = ({ children }) => {
         getStorageItem(STORAGE_KEYS.GOALS, [], z.array(GoalSchema))
     );
 
-    // Multi-tab sync for goals
+    // Multi-tab sync and refresh event handling
     useEffect(() => {
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key !== STORAGE_KEYS.GOALS || !e.newValue) return;
@@ -37,8 +38,17 @@ export const GoalsProvider: React.FC<GoalsProviderProps> = ({ children }) => {
                 // Ignore parse errors
             }
         };
+
+        const handleRefresh = () => {
+            setGoals(getStorageItem(STORAGE_KEYS.GOALS, [], z.array(GoalSchema)));
+        };
+
         window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
+        window.addEventListener(STORAGE_REFRESH_EVENT, handleRefresh);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener(STORAGE_REFRESH_EVENT, handleRefresh);
+        };
     }, []);
 
     const saveGoals = useCallback((newGoals: Goal[]) => {

@@ -2,6 +2,18 @@
 // KREATIVIUM - Complete Data Model for LLM Analysis
 // ============================================
 
+// Import key-based types and constants for i18n support
+import {
+    SENSORY_TRIGGER_KEYS,
+    CONTEXT_TRIGGER_KEYS,
+    STRATEGY_KEYS,
+    WARNING_SIGN_KEYS,
+    type SensoryTriggerKey,
+    type ContextTriggerKey,
+    type StrategyKey,
+    type WarningSignKey,
+} from './utils/i18nMigration';
+
 // Context types
 export type ContextType = 'home' | 'school';
 export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
@@ -201,80 +213,23 @@ export interface AnalysisCorrelation {
 }
 
 // ============================================
-// TRIGGER & STRATEGY OPTIONS
+// TRIGGER & STRATEGY OPTIONS (i18n key-based)
 // ============================================
-export type SensoryTrigger =
-    | 'Auditiv'
-    | 'Visuell'
-    | 'Taktil'
-    | 'Vestibulær'
-    | 'Interosepsjon'
-    | 'Lukt'
-    | 'Smak'
-    | 'Lys'
-    | 'Temperatur'
-    | 'Trengsel';
+// Types imported from i18nMigration.ts at file top
 
-export type ContextTrigger =
-    | 'Krav'
-    | 'Overgang'
-    | 'Sosialt'
-    | 'Uventet Hendelse'
-    | 'Sliten'
-    | 'Sult'
-    | 'Ventetid'
-    | 'Gruppearbeid'
-    | 'Prøve/Test'
-    | 'Ny Situasjon';
+// Re-export key types as the primary types
+export type SensoryTrigger = SensoryTriggerKey;
+export type ContextTrigger = ContextTriggerKey;
+export type Strategy = StrategyKey;
+export type WarningSign = WarningSignKey;
 
-export type Strategy =
-    | 'Skjerming'
-    | 'Dypt Trykk'
-    | 'Samregulering'
-    | 'Pusting'
-    | 'Eget Rom'
-    | 'Vektteppe'
-    | 'Hodetelefoner'
-    | 'Fidget'
-    | 'Bevegelse'
-    | 'Mørkt Rom'
-    | 'Kjent Aktivitet'
-    | 'Musikk'
-    | 'Timer/Visuell Støtte';
+// Export arrays of valid keys
+export const SENSORY_TRIGGERS: SensoryTrigger[] = [...SENSORY_TRIGGER_KEYS];
+export const CONTEXT_TRIGGERS: ContextTrigger[] = [...CONTEXT_TRIGGER_KEYS];
+export const STRATEGIES: Strategy[] = [...STRATEGY_KEYS];
+export const WARNING_SIGNS: WarningSign[] = [...WARNING_SIGN_KEYS];
 
-export type WarningSign =
-    | 'Økt motorisk uro'
-    | 'Verbal eskalering'
-    | 'Tilbaketrekning'
-    | 'Repetitive bevegelser'
-    | 'Dekker ører'
-    | 'Unngår øyekontakt'
-    | 'Rødme/svetting'
-    | 'Klamrer seg'
-    | 'Nekter instrukser'
-    | 'Gråt';
-
-export const SENSORY_TRIGGERS: SensoryTrigger[] = [
-    'Auditiv', 'Visuell', 'Taktil', 'Vestibulær', 'Interosepsjon',
-    'Lukt', 'Smak', 'Lys', 'Temperatur', 'Trengsel'
-];
-
-export const CONTEXT_TRIGGERS: ContextTrigger[] = [
-    'Krav', 'Overgang', 'Sosialt', 'Uventet Hendelse', 'Sliten',
-    'Sult', 'Ventetid', 'Gruppearbeid', 'Prøve/Test', 'Ny Situasjon'
-];
-
-export const STRATEGIES: Strategy[] = [
-    'Skjerming', 'Dypt Trykk', 'Samregulering', 'Pusting', 'Eget Rom',
-    'Vektteppe', 'Hodetelefoner', 'Fidget', 'Bevegelse', 'Mørkt Rom',
-    'Kjent Aktivitet', 'Musikk', 'Timer/Visuell Støtte'
-];
-
-export const WARNING_SIGNS: WarningSign[] = [
-    'Økt motorisk uro', 'Verbal eskalering', 'Tilbaketrekning',
-    'Repetitive bevegelser', 'Dekker ører', 'Unngår øyekontakt',
-    'Rødme/svetting', 'Klamrer seg', 'Nekter instrukser', 'Gråt'
-];
+// Migration utilities available from './utils/i18nMigration' for data migration
 
 export const CRISIS_TYPES: { value: CrisisType; label: string }[] = [
     { value: 'meltdown', label: 'Nedsmelting' },

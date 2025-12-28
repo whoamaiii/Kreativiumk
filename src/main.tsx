@@ -3,6 +3,11 @@ import { registerSW } from 'virtual:pwa-register'
 import './index.css';
 import './i18n';
 import App from './App.tsx';
+import { runDataMigrations } from './store/dataMigration';
+
+// Run data migrations before React renders
+// This migrates legacy Norwegian strings to i18n keys
+runDataMigrations();
 
 // Register service worker for PWA offline support
 if ('serviceWorker' in navigator) {

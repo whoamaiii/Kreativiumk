@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Crisis Context - Manages crisis event tracking
  */
@@ -7,7 +8,7 @@ import type { CrisisEvent, ContextType } from '../types';
 import { enrichCrisisEvent } from '../types';
 import { STORAGE_KEYS } from '../constants/storage';
 import { CrisisEventSchema, validateCrisisEvent } from '../utils/validation';
-import { getStorageItem, safeSetItem } from './storage';
+import { getStorageItem, safeSetItem, STORAGE_REFRESH_EVENT } from './storage';
 import type { CrisisContextType } from './types';
 
 const CrisisContext = createContext<CrisisContextType | undefined>(undefined);
@@ -21,7 +22,7 @@ export const CrisisProvider: React.FC<CrisisProviderProps> = ({ children }) => {
         getStorageItem(STORAGE_KEYS.CRISIS_EVENTS, [], z.array(CrisisEventSchema))
     );
 
-    // Multi-tab sync for crisis events
+    // Multi-tab sync and refresh event handling
     useEffect(() => {
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key !== STORAGE_KEYS.CRISIS_EVENTS || !e.newValue) return;
@@ -37,8 +38,17 @@ export const CrisisProvider: React.FC<CrisisProviderProps> = ({ children }) => {
                 // Ignore parse errors
             }
         };
+
+        const handleRefresh = () => {
+            setCrisisEvents(getStorageItem(STORAGE_KEYS.CRISIS_EVENTS, [], z.array(CrisisEventSchema)));
+        };
+
         window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
+        window.addEventListener(STORAGE_REFRESH_EVENT, handleRefresh);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener(STORAGE_REFRESH_EVENT, handleRefresh);
+        };
     }, []);
 
     const saveCrisisEvents = useCallback((newEvents: CrisisEvent[]) => {

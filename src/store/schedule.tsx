@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Schedule Context - Manages visual schedule entries and templates
  */
@@ -6,7 +7,7 @@ import { z } from 'zod';
 import type { ScheduleEntry, DailyScheduleTemplate } from '../types';
 import { STORAGE_KEYS } from '../constants/storage';
 import { ScheduleEntrySchema, DailyScheduleTemplateSchema } from '../utils/validation';
-import { getStorageItem, safeSetItem } from './storage';
+import { getStorageItem, safeSetItem, STORAGE_REFRESH_EVENT } from './storage';
 import type { ScheduleContextType } from './types';
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
@@ -23,7 +24,7 @@ export const ScheduleProvider: React.FC<ScheduleProviderProps> = ({ children }) 
         getStorageItem(STORAGE_KEYS.SCHEDULE_TEMPLATES, [], z.array(DailyScheduleTemplateSchema))
     );
 
-    // Multi-tab sync for schedule entries
+    // Multi-tab sync and refresh event handling
     useEffect(() => {
         const handleStorageChange = (e: StorageEvent) => {
             if (!e.newValue) return;
@@ -48,8 +49,18 @@ export const ScheduleProvider: React.FC<ScheduleProviderProps> = ({ children }) 
                 // Ignore parse errors
             }
         };
+
+        const handleRefresh = () => {
+            setScheduleEntries(getStorageItem(STORAGE_KEYS.SCHEDULE_ENTRIES, [], z.array(ScheduleEntrySchema)));
+            setScheduleTemplates(getStorageItem(STORAGE_KEYS.SCHEDULE_TEMPLATES, [], z.array(DailyScheduleTemplateSchema)));
+        };
+
         window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
+        window.addEventListener(STORAGE_REFRESH_EVENT, handleRefresh);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener(STORAGE_REFRESH_EVENT, handleRefresh);
+        };
     }, []);
 
     const saveScheduleEntries = useCallback((newEntries: ScheduleEntry[]) => {
