@@ -321,8 +321,12 @@ export const Settings: React.FC = () => {
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder={t('settings.namePlaceholder')}
+                                maxLength={50}
                                 className="w-full bg-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary"
                             />
+                            <span className={`text-xs mt-1 block ${name.length >= 45 ? 'text-orange-400' : 'text-slate-500'}`}>
+                                {name.length}/50
+                            </span>
                         </div>
 
                         <div>
@@ -332,8 +336,16 @@ export const Settings: React.FC = () => {
                             <input
                                 type="number"
                                 value={age}
-                                onChange={(e) => setAge(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
-                                min={1}
+                                onChange={(e) => {
+                                    if (e.target.value === '') {
+                                        setAge('');
+                                    } else {
+                                        const val = parseInt(e.target.value, 10);
+                                        // Clamp value between 0 and 25
+                                        setAge(Math.min(25, Math.max(0, isNaN(val) ? 0 : val)));
+                                    }
+                                }}
+                                min={0}
                                 max={25}
                                 placeholder={t('settings.agePlaceholder')}
                                 className="w-32 bg-white/10 rounded-xl px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -395,6 +407,7 @@ export const Settings: React.FC = () => {
                         selected={sensorySensitivities}
                         onChange={setPrimarySensitivities}
                         maxSelect={5}
+                        translatePrefix="domain.sensory"
                     />
                 </div>
 
@@ -410,6 +423,7 @@ export const Settings: React.FC = () => {
                         selected={seekingSensory}
                         onChange={setSeekingSensory}
                         maxSelect={5}
+                        translatePrefix="domain.sensory"
                     />
                 </div>
 
@@ -424,6 +438,7 @@ export const Settings: React.FC = () => {
                         options={STRATEGIES.map(s => ({ value: s, label: s }))}
                         selected={effectiveStrategies}
                         onChange={setEffectiveStrategies}
+                        translatePrefix="domain.strategies"
                     />
                 </div>
 

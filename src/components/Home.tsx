@@ -11,6 +11,7 @@ import { loadMockData, clearMockData } from '../utils/generateMockData';
 import { useSettings } from '../store';
 import { RiskForecast } from './RiskForecast';
 import { useTranslation } from 'react-i18next';
+import { useToast } from './Toast';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -51,6 +52,7 @@ const itemVariantsReduced = {
 export const Home: React.FC = () => {
     const { refreshData } = useSettings();
     const { t, i18n } = useTranslation();
+    const { showSuccess } = useToast();
     const prefersReducedMotion = useReducedMotion();
     const mainRef = useRef<HTMLElement>(null);
     const [mockDataLoaded, setMockDataLoaded] = useState(false);
@@ -65,16 +67,18 @@ export const Home: React.FC = () => {
         setMockDataLoaded(true);
         setMockDataCleared(false);
         refreshData();
+        showSuccess(t('home.mockDataLoaded', 'Test data loaded successfully'));
         setTimeout(() => setMockDataLoaded(false), 2000);
-    }, [refreshData]);
+    }, [refreshData, showSuccess, t]);
 
     const handleClearMockData = useCallback(() => {
         clearMockData();
         setMockDataCleared(true);
         setMockDataLoaded(false);
         refreshData();
+        showSuccess(t('home.mockDataCleared', 'Test data cleared'));
         setTimeout(() => setMockDataCleared(false), 2000);
-    }, [refreshData]);
+    }, [refreshData, showSuccess, t]);
 
     const toggleLanguage = () => {
         i18n.changeLanguage(i18n.language === 'no' ? 'en' : 'no');

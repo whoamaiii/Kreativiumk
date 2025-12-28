@@ -244,8 +244,8 @@ export const DysregulationHeatmap: React.FC = () => {
                             return (
                                 <motion.div
                                     key={key}
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.95 }}
+                                    whileHover={count > 0 ? { scale: 1.1 } : undefined}
+                                    whileTap={count > 0 ? { scale: 0.95 } : undefined}
                                     onClick={() => {
                                         if (count > 0) {
                                             setSelectedCell({
@@ -261,12 +261,31 @@ export const DysregulationHeatmap: React.FC = () => {
                                         }
                                     }}
                                     className={`
-                                        h-12 rounded-lg flex flex-col items-center justify-center cursor-pointer
+                                        h-12 rounded-lg flex flex-col items-center justify-center
                                         transition-all relative
+                                        ${count > 0 ? 'cursor-pointer hover:ring-2 hover:ring-primary/50' : 'cursor-default'}
                                         ${getArousalColor(arousal, count)}
                                         ${crises > 0 ? 'ring-2 ring-red-500' : ''}
                                     `}
                                     title={count > 0 ? `${t('heatmap.avgArousal')}: ${arousal.toFixed(1)}, ${t('heatmap.logs')}: ${count}` : t('heatmap.noData')}
+                                    role={count > 0 ? 'button' : undefined}
+                                    aria-label={count > 0 ? `${day.fullLabel} ${block.label}: ${t('heatmap.avgArousal')} ${arousal.toFixed(1)}, ${count} ${t('heatmap.logs')}` : undefined}
+                                    tabIndex={count > 0 ? 0 : -1}
+                                    onKeyDown={(e) => {
+                                        if (count > 0 && (e.key === 'Enter' || e.key === ' ')) {
+                                            e.preventDefault();
+                                            setSelectedCell({
+                                                day: day.id,
+                                                dayLabel: day.fullLabel,
+                                                timeBlock: block.id,
+                                                timeLabel: block.label,
+                                                avgArousal: arousal,
+                                                logCount: count,
+                                                crisisCount: crises,
+                                                maxArousal: cell?.maxArousal || 0
+                                            });
+                                        }
+                                    }}
                                 >
                                     <span className="text-sm">{getArousalEmoji(arousal, count)}</span>
                                     {count > 0 && (

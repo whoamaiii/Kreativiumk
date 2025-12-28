@@ -10,6 +10,7 @@ import type { AnalysisResult, LogEntry } from '../types';
 import { getModelDisplayName } from '../utils/modelUtils';
 import { analyzeMultiFactorPatterns, analyzeStrategyCombinations } from '../utils/multiFactorAnalysis';
 import { analyzeRecoveryPatterns } from '../utils/recoveryAnalysis';
+import { translateWarningSign, translateStrategy, translateTrigger } from '../utils/translateDomain';
 
 // Helper to calculate strategy effectiveness from logs
 const calculateStrategyEffectiveness = (logs: LogEntry[]) => {
@@ -433,10 +434,12 @@ export const BehaviorInsights: React.FC = () => {
                             </div>
                             <div className="flex flex-1 flex-col py-3">
                                 <p className="text-white text-base font-medium leading-normal">
-                                    {latestCrisis.sensoryTriggers[0] || latestCrisis.contextTriggers[0] || t('behaviorInsights.meltdownAnatomy.unknownTrigger')}
+                                    {latestCrisis.sensoryTriggers[0] ? translateTrigger(latestCrisis.sensoryTriggers[0]) :
+                                     latestCrisis.contextTriggers[0] ? translateTrigger(latestCrisis.contextTriggers[0]) :
+                                     t('behaviorInsights.meltdownAnatomy.unknownTrigger')}
                                 </p>
                                 <p className="text-slate-400 text-sm font-normal leading-normal">
-                                    {t('behaviorInsights.meltdownAnatomy.warning')}: {latestCrisis.warningSignsObserved[0] || t('behaviorInsights.meltdownAnatomy.notObserved')}
+                                    {t('behaviorInsights.meltdownAnatomy.warning')}: {latestCrisis.warningSignsObserved[0] ? translateWarningSign(latestCrisis.warningSignsObserved[0]) : t('behaviorInsights.meltdownAnatomy.notObserved')}
                                 </p>
                             </div>
 
@@ -469,7 +472,7 @@ export const BehaviorInsights: React.FC = () => {
                             </div>
                             <div className="flex flex-1 flex-col py-3">
                                 <p className="text-white text-base font-medium leading-normal">
-                                    {latestCrisis.strategiesUsed[0] || t('behaviorInsights.meltdownAnatomy.recovered')}
+                                    {latestCrisis.strategiesUsed[0] ? translateStrategy(latestCrisis.strategiesUsed[0]) : t('behaviorInsights.meltdownAnatomy.recovered')}
                                 </p>
                                 <p className="text-slate-400 text-sm font-normal leading-normal">
                                     {t('behaviorInsights.meltdownAnatomy.recoveryTime')}: {latestCrisis.recoveryTimeMinutes || '?'} min

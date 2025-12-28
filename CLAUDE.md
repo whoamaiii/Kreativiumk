@@ -98,3 +98,26 @@ src/
 ├── store.tsx       # All React Context providers
 └── types.ts        # TypeScript data models with enums/constants
 ```
+
+## Task Tracking Workflow
+
+When working on bug fixes or features from a task list:
+
+1. **Before Starting Each Task:**
+   - Mark the task as "in progress" in the tracking document (`.claude/BUG_FIXES.md`)
+
+2. **After Completing Each Task:**
+   - Run `npm run build` to verify no type errors
+   - Run `npm run test:run` to verify tests pass
+   - Test the fix manually if applicable
+   - Mark task as "completed" in tracking document
+   - Add completion date and notes to the Completion Log table
+
+3. **Double-Check Protocol:**
+   - Verify the fix addresses the exact issue described
+   - Confirm no regressions introduced
+   - Update tracking document with completion notes
+
+4. **Tracking Document Location:**
+   - Bug fixes: `.claude/BUG_FIXES.md`
+   - Format: Checkbox list with status, date, and notes

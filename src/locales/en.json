@@ -84,7 +84,9 @@
             "loaded": "Loaded!",
             "clearData": "Clear all test data"
         },
-        "switchLanguage": "Switch language"
+        "switchLanguage": "Switch language",
+        "mockDataLoaded": "Test data loaded successfully",
+        "mockDataCleared": "Test data cleared"
     },
     "energyRegulation": {
         "title": "Energy & Regulation",

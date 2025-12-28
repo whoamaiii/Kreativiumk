@@ -477,9 +477,10 @@ export const GoalTracking: React.FC = () => {
                                             type="number"
                                             value={newTargetValue}
                                             onChange={(e) => {
-                                                const val = Number(e.target.value);
+                                                const minVal = newTargetDirection === 'decrease' ? 0 : 1;
+                                                const val = Math.max(minVal, Number(e.target.value));
                                                 setNewTargetValue(val);
-                                                if (validationErrors.targetValue && val > 0) {
+                                                if (validationErrors.targetValue && val >= minVal) {
                                                     setValidationErrors(prev => ({ ...prev, targetValue: undefined }));
                                                 }
                                             }}

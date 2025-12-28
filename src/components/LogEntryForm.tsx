@@ -514,8 +514,9 @@ export const LogEntryForm: React.FC<LogEntryFormProps> = ({ onClose }) => {
                                 type="number"
                                 id={`${formId}-duration`}
                                 value={formState.duration}
-                                onChange={(e) => dispatch({ type: 'SET_DURATION', payload: Math.max(0, Number(e.target.value)) })}
+                                onChange={(e) => dispatch({ type: 'SET_DURATION', payload: Math.min(1440, Math.max(0, Number(e.target.value))) })}
                                 min="0"
+                                max="1440"
                                 className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl p-4 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary transition-all"
                                 aria-describedby={`${formId}-duration-hint`}
                             />

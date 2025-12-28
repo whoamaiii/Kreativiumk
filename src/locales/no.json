@@ -84,7 +84,9 @@
             "loaded": "Lastet!",
             "clearData": "Slett alle testdata"
         },
-        "switchLanguage": "Bytt språk"
+        "switchLanguage": "Bytt språk",
+        "mockDataLoaded": "Testdata lastet",
+        "mockDataCleared": "Testdata slettet"
     },
     "energyRegulation": {
         "title": "Energi & Regulering",
