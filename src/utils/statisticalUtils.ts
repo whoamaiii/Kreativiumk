@@ -545,7 +545,7 @@ export function trainTestSplit<T>(
     const shuffled = [...data];
 
     // Simple seeded random for reproducibility
-    let random = seed !== undefined
+    const random = seed !== undefined
         ? () => {
             seed = (seed! * 1103515245 + 12345) & 0x7fffffff;
             return seed / 0x7fffffff;

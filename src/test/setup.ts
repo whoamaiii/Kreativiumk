@@ -33,18 +33,35 @@ vi.mock('react-i18next', () => ({
     },
 }));
 
-// Mock localStorage for tests
-const localStorageMock = (() => {
+// Mock localStorage for tests with dynamic length property
+const createLocalStorageMock = () => {
     let store: Record<string, string> = {};
-    return {
-        getItem: vi.fn((key: string) => store[key] || null),
-        setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
-        removeItem: vi.fn((key: string) => { delete store[key]; }),
-        clear: vi.fn(() => { store = {}; }),
-        length: 0,
-        key: vi.fn((i: number) => Object.keys(store)[i] || null),
+
+    const mock = {
+        getItem: vi.fn((key: string) => store[key] ?? null),
+        setItem: vi.fn((key: string, value: string) => {
+            store[key] = value;
+        }),
+        removeItem: vi.fn((key: string) => {
+            delete store[key];
+        }),
+        clear: vi.fn(() => {
+            store = {};
+        }),
+        key: vi.fn((i: number) => Object.keys(store)[i] ?? null),
     };
-})();
+
+    // Make length a getter that dynamically returns the store size
+    Object.defineProperty(mock, 'length', {
+        get: () => Object.keys(store).length,
+        enumerable: true,
+        configurable: true
+    });
+
+    return mock;
+};
+
+const localStorageMock = createLocalStorageMock();
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
 // Mock matchMedia for responsive design tests
@@ -62,7 +79,15 @@ Object.defineProperty(window, 'matchMedia', {
     })),
 });
 
-// Mock crypto.randomUUID for generating test IDs
+// Mock crypto.randomUUID for generating valid test UUIDs
+// Format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
 Object.defineProperty(crypto, 'randomUUID', {
-    value: vi.fn(() => 'test-uuid-' + Math.random().toString(36).substr(2, 9)),
+    value: vi.fn(() => {
+        // Generate a valid UUID v4 format
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }),
 });

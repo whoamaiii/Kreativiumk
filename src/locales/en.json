@@ -9,7 +9,14 @@
         "goBack": "Go back",
         "storageError": "Storage error",
         "storageQuotaExceeded": "Device storage is full. Some data may not be saved.",
-        "storageSaveError": "Failed to save data. Please try again."
+        "storageSaveError": "Failed to save data. Please try again.",
+        "cancelling": "Cancelling...",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "deleting": "Deleting...",
+        "refresh": "Refresh",
+        "seconds": "sec",
+        "unknown": "Unknown"
     },
     "chart": {
         "noDataForPeriod": "No data available for this period"
@@ -25,17 +32,39 @@
     "accessibility": {
         "skipToMain": "Skip to main content"
     },
+    "onboarding": {
+        "appName": "NeuroLogg Pro",
+        "tagline": "Understand and support your child's regulation",
+        "features": {
+            "quickLogging": "Quick daily logging with one tap",
+            "patterns": "See patterns and predict difficult situations",
+            "privacy": "Private - all data stored locally on your device"
+        },
+        "startSetup": "Start setup",
+        "setupTime": "Takes less than 2 minutes",
+        "exploreFirst": "Explore the app first",
+        "profile": {
+            "title": "Who is this for?",
+            "subtitle": "We personalize the app for your child",
+            "nameLabel": "Child's name or nickname",
+            "namePlaceholder": "e.g. Alex, Little One, etc.",
+            "nameRequired": "Please enter a name to continue",
+            "hint": "You can change this in settings later",
+            "next": "Next",
+            "back": "Back"
+        }
+    },
     "home": {
         "title": "KREATIVIUM",
-        "subtitle": "Master your energy. Track your mind.",
+        "subtitle": "",
         "crisisMode": {
             "title": "Crisis Mode",
-            "subtitle": "Tap to start timer",
-            "ariaLabel": "Crisis Mode - Start crisis timer"
+            "subtitle": "Start breathing timer",
+            "ariaLabel": "Crisis Mode - Start breathing and grounding timer"
         },
         "newLog": {
-            "title": "New Log",
-            "subtitle": "Log your current state"
+            "title": "How are you feeling?",
+            "subtitle": "Quick check-in"
         },
         "dashboard": {
             "title": "Overview",
@@ -48,6 +77,10 @@
         "behavior": {
             "title": "Behavior",
             "subtitle": "Meltdown anatomy"
+        },
+        "sensory": {
+            "title": "Sensory",
+            "subtitle": "Sensory profile"
         },
         "senses": {
             "title": "Senses",
@@ -85,11 +118,20 @@
             "title": "Developer Tools",
             "loadData": "Load test data (2 weeks)",
             "loaded": "Loaded!",
-            "clearData": "Clear all test data"
+            "clearData": "Clear all test data",
+            "hide": "Hide dev tools",
+            "hideHint": "Hide dev tools (click Show Developer Tools to restore)",
+            "show": "Show Developer Tools"
         },
         "switchLanguage": "Switch language",
         "mockDataLoaded": "Test data loaded successfully",
-        "mockDataCleared": "Test data cleared"
+        "mockDataCleared": "Test data cleared",
+        "sections": {
+            "insights": "Insights",
+            "tracking": "Tracking Tools",
+            "planning": "Planning",
+            "more": "More"
+        }
     },
     "energyRegulation": {
         "title": "Energy & Regulation",
@@ -103,6 +145,8 @@
         "levelModerate": "Moderate",
         "levelLow": "Low",
         "today": "today",
+        "vsStartOfDay": "vs start of day",
+        "trendExplanation": "Change from your first log today",
         "noDataToday": "No energy data for today",
         "insights": "Energy Insights",
         "insightWithData": "Based on your logs, energy varies. Consider scheduling 'Quiet Time' when you see drops below level 4.",
@@ -119,7 +163,9 @@
             "avgDifficulty": "Avg Difficulty",
             "totalLogged": "Total Logged",
             "mostEffective": "Most Effective Support",
-            "givesAvgDifficulty": "Gives avg difficulty of"
+            "givesAvgDifficulty": "Gives avg difficulty of",
+            "noSupportsYet": "No strategies recorded yet",
+            "addSupportsHint": "Add them when completing activities"
         },
         "charts": {
             "hardest": "Most Challenging Transitions",
@@ -134,7 +180,8 @@
             "noData": "No transition data yet",
             "howToStart": "Complete activities and rate their difficulty to see insights.",
             "goToSchedule": "Go to Schedule",
-            "noStrategies": "No strategy data yet. Try logging support during transitions.",
+            "noStrategies": "No support strategies recorded",
+            "strategiesHint": "When completing activities, add strategies used to help with transitions",
             "noChartData": "Not enough data to display chart"
         }
     },
@@ -235,6 +282,21 @@
             "events": "Events",
             "goals": "Goals"
         },
+        "analysis": {
+            "title": "Analysis Settings",
+            "recencyDecay": {
+                "label": "Data decay (half-life)",
+                "days": "days",
+                "fast": "Fast (3d)",
+                "slow": "Slow (21d)",
+                "description": "How quickly old data loses importance in predictions. Lower value = recent data matters more.",
+                "hint": {
+                    "fast": "⚡ Fast adaptation: Good for children with frequently changing patterns",
+                    "slow": "🐢 Slow adaptation: Good for children with stable patterns over time",
+                    "balanced": "⚖️ Balanced: Good for most children"
+                }
+            }
+        },
         "save": {
             "button": "Save Profile",
             "saved": "Saved!"
@@ -258,12 +320,12 @@
     },
     "risk": {
         "title": {
-            "today": "Today's Forecast"
+            "today": "Crisis Risk"
         },
         "level": {
-            "low": "Low Risk",
-            "moderate": "Moderate Risk",
-            "high": "High Risk"
+            "low": "Low",
+            "moderate": "Moderate",
+            "high": "High"
         },
         "obs": "Note: {{time}}",
         "factors": {
@@ -335,6 +397,7 @@
         "stopRecording": "Stop Recording",
         "startRecording": "Record Audio Note",
         "recordingActive": "Recording active. Tap Stop when event is over.",
+        "audioRecordingTime": "recording",
         "eventEnded": "Event Ended",
         "documentEvent": "Document Event",
         "audioSaved": "Audio recording saved",
@@ -377,6 +440,75 @@
             "customTime": "Enter minutes...",
             "markRecovered": "Recovered now",
             "skip": "Skip (log later)"
+        },
+        "reflection": {
+            "saved": "Crisis recorded",
+            "subtitle": "Take a moment to reflect",
+            "title": "Reflection",
+            "skip": "Skip",
+            "complete": "Complete",
+            "next": "Next",
+            "back": "Back",
+            "step": "Step {{current}} of {{total}}",
+            "steps": {
+                "state": {
+                    "title": "Current State",
+                    "description": "How is the child feeling now?"
+                },
+                "strategies": {
+                    "title": "Strategies",
+                    "description": "What worked and what didn't?"
+                },
+                "trigger": {
+                    "title": "Trigger",
+                    "description": "What do you think was the main cause?"
+                },
+                "notes": {
+                    "title": "Notes",
+                    "description": "Additional observations"
+                }
+            },
+            "arousal": {
+                "label": "Arousal Level",
+                "low": "Calm",
+                "mid": "Moderate",
+                "high": "Tense"
+            },
+            "energy": {
+                "label": "Energy Level",
+                "low": "Exhausted",
+                "mid": "OK",
+                "high": "Energetic"
+            },
+            "valence": {
+                "label": "Mood",
+                "low": "Bad",
+                "mid": "Neutral",
+                "high": "Good"
+            },
+            "emotionalState": "Emotional state",
+            "emotionalStates": {
+                "calm": "Calm",
+                "tired": "Tired",
+                "anxious": "Anxious",
+                "sad": "Sad",
+                "relieved": "Relieved",
+                "frustrated": "Frustrated"
+            },
+            "strategiesHelped": "Strategies that helped",
+            "strategiesDidntHelp": "Strategies that didn't work",
+            "mostHelpful": "Which helped most?",
+            "supportNeeded": "What did they need?",
+            "mainTrigger": "What do you think was the main trigger?",
+            "preventionIdeas": "Prevention ideas",
+            "preventionPlaceholder": "Enter idea and press Enter...",
+            "caregiverNotes": "Your observations",
+            "caregiverPlaceholder": "What did you notice? What worked? What would you do differently?",
+            "environmentNotes": "Environment factors",
+            "environmentPlaceholder": "E.g. noise, light, temperature, number of people...",
+            "needsFollowUp": "Needs follow-up?",
+            "followUpNotes": "Follow-up notes",
+            "followUpPlaceholder": "What should be followed up?"
         }
     },
     "reports": {
@@ -477,6 +609,7 @@
         "sampleSummary": "Sample goals shown below. Add your own to start tracking!",
         "sample": "Sample",
         "totalCompletion": "Total Completion",
+        "averageAcrossGoals": "Average across all goals",
         "activeGoals": "Active Goals",
         "progress": "Progress",
         "current": "Now:",
@@ -551,8 +684,16 @@
     },
     "navigation": {
         "home": "Home",
-        "dashboard": "Dashboard",
-        "analysis": "Analysis"
+        "stats": "Stats",
+        "log": "Log",
+        "trends": "Trends",
+        "settings": "Settings"
+    },
+    "simpleInsights": {
+        "empty": {
+            "message": "Log your first observation to see insights",
+            "cta": "Add observation"
+        }
     },
     "behaviorInsights": {
         "title": "Behavior Insights",
@@ -751,7 +892,25 @@
         "vulnerableTimes": "Vulnerable Times",
         "insights": "Insights",
         "mainFinding": "Main Finding",
-        "tip": "Tip"
+        "tip": "Tip",
+        "days": {
+            "monday": { "short": "Mon", "full": "Monday" },
+            "tuesday": { "short": "Tue", "full": "Tuesday" },
+            "wednesday": { "short": "Wed", "full": "Wednesday" },
+            "thursday": { "short": "Thu", "full": "Thursday" },
+            "friday": { "short": "Fri", "full": "Friday" },
+            "saturday": { "short": "Sat", "full": "Saturday" },
+            "sunday": { "short": "Sun", "full": "Sunday" }
+        },
+        "legend": {
+            "title": "Arousal level",
+            "low": "Low (1-3)",
+            "high": "High (8-10)"
+        },
+        "avgArousalLabel": "avg arousal",
+        "highestArousalAt": "Highest arousal observed at {{day}} {{time}} with average {{avg}}.",
+        "tipContent": "Consider preventive measures around these times - extra support, reduced demands, or planned breaks.",
+        "logMoreForPatterns": "Log more events to see patterns over time. The map shows when arousal is highest."
     },
     "domain": {
         "sensory": {
@@ -898,5 +1057,42 @@
         "timedOut": "Timed out naturally",
         "interrupted": "Interrupted",
         "other": "Other"
+    },
+    "model": {
+        "downloadPromptTitle": "On-device AI analysis",
+        "downloadPromptSubtitle": "Run analysis without internet",
+        "benefitOffline": "Works completely offline",
+        "benefitPrivacy": "Data never leaves device",
+        "benefitSize": "Requires {{size}} storage",
+        "downloading": "Downloading...",
+        "downloadTip": "Ensure stable WiFi connection",
+        "downloadProgress": "Download progress",
+        "errorGatedModel": "This model requires a Hugging Face token. Click \"Need token?\" for instructions.",
+        "tokenRequired": "Hugging Face Token Required",
+        "tokenInstructions": "Gemma 3 4B is a gated model. Follow these steps to get access:",
+        "tokenStep3": "Paste your token below",
+        "tokenInputLabel": "Hugging Face token",
+        "acceptLicense": "Accept the Gemma license",
+        "createToken": "Create a token with \"read\" permission",
+        "downloadingButton": "Downloading...",
+        "downloadButton": "Download AI model",
+        "skipButton": "Use cloud API (requires internet)",
+        "needToken": "Need token?",
+        "settingsHint": "You can download the model later from Settings",
+        "settingsTitle": "Local AI model",
+        "modelName": "Gemma 3 4B",
+        "statusDownloaded": "Downloaded",
+        "statusExtracting": "Extracting...",
+        "statusNotDownloaded": "Not downloaded",
+        "storageRequired": "Storage space",
+        "downloadingProgress": "Downloading... {{percent}}%",
+        "deleteConfirm": "Are you sure you want to delete the model? You'll need to re-download it to use local analysis.",
+        "deleteButton": "Delete model",
+        "descriptionDownloaded": "Analysis runs locally on device. Data is never sent to external servers.",
+        "descriptionNotDownloaded": "Download Gemma 3 to run analysis offline. Requires WiFi for download.",
+        "etaRemaining": "~{{time}} remaining",
+        "extractingModel": "Extracting model...",
+        "extractionProgress": "Extraction progress",
+        "extractingProgress": "Extracting... {{percent}}%"
     }
 }

@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mic, Square, AlertTriangle, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { Mic, Square, AlertTriangle, CheckCircle, AlertCircle, RefreshCw, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useCrisis, useAppContext } from '../store';
 import {
     type CrisisType,
     type CrisisResolution,
+    type CrisisEvent,
+    type CrisisReflection as CrisisReflectionType,
     CRISIS_TYPES,
     SENSORY_TRIGGERS,
     CONTEXT_TRIGGERS,
@@ -15,11 +17,13 @@ import {
 import { TriggerSelector } from './TriggerSelector';
 import { useTranslation } from 'react-i18next';
 import { AudioPlayer } from './AudioPlayer';
+import { CrisisReflection } from './CrisisReflection';
+import { isNative } from '../utils/platform';
 
 export const CrisisMode: React.FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { addCrisisEvent } = useCrisis();
+    const { addCrisisEvent, addCrisisReflection } = useCrisis();
     const { currentContext } = useAppContext();
     const prefersReducedMotion = useReducedMotion();
 
@@ -46,14 +50,25 @@ export const CrisisMode: React.FC = () => {
     const [recoveryStartTime, setRecoveryStartTime] = useState<number | null>(null);
     const [recoveryElapsed, setRecoveryElapsed] = useState(0);
 
+    // Reflection phase state
+    const [showReflection, setShowReflection] = useState(false);
+    const [savedCrisisEvent, setSavedCrisisEvent] = useState<CrisisEvent | null>(null);
+
     // Audio Recording refs - declared early so cleanup effect can access them
     const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
     const audioChunksRef = React.useRef<Blob[]>([]);
     const [pendingAudioBlob, setPendingAudioBlob] = useState<Blob | null>(null);
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const [audioError, setAudioError] = useState<string | null>(null);
-    const [micPermissionState, setMicPermissionState] = useState<'prompt' | 'granted' | 'denied' | 'unavailable'>('prompt');
+    // Initialize with 'unavailable' on native platforms since audio recording is disabled there
+    const [micPermissionState, setMicPermissionState] = useState<'prompt' | 'granted' | 'denied' | 'unavailable'>(() =>
+        isNative() ? 'unavailable' : 'prompt'
+    );
     const startTimeRef = React.useRef<number | null>(null);
+
+    // Audio recording duration state
+    const [audioRecordingSeconds, setAudioRecordingSeconds] = useState(0);
+    const audioStartTimeRef = React.useRef<number | null>(null);
 
     // Initialize start time on mount
     useEffect(() => {
@@ -88,8 +103,27 @@ export const CrisisMode: React.FC = () => {
         };
     }, [isActive]);
 
-    // Check microphone permission state on mount
+    // Audio recording timer effect
     useEffect(() => {
+        if (!isRecording || audioStartTimeRef.current === null) {
+            return;
+        }
+
+        const interval = setInterval(() => {
+            const elapsed = Math.floor((Date.now() - audioStartTimeRef.current!) / 1000);
+            setAudioRecordingSeconds(elapsed);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [isRecording]);
+
+    // Check microphone permission state on mount (web only)
+    useEffect(() => {
+        // Skip on native since audio recording is disabled (state already initialized to 'unavailable')
+        if (isNative()) {
+            return;
+        }
+
         let permissionStatus: PermissionStatus | null = null;
 
         const handlePermissionChange = () => {
@@ -246,6 +280,8 @@ export const CrisisMode: React.FC = () => {
             };
 
             mediaRecorder.start();
+            audioStartTimeRef.current = Date.now();
+            setAudioRecordingSeconds(0);
             setIsRecording(true);
         } catch (error) {
             if (import.meta.env.DEV) {
@@ -288,6 +324,7 @@ export const CrisisMode: React.FC = () => {
         if (mediaRecorderRef.current && isRecording) {
             mediaRecorderRef.current.stop();
             mediaRecorderRef.current.stream?.getTracks().forEach(track => track.stop()); // Stop stream
+            audioStartTimeRef.current = null;
             setIsRecording(false);
         }
     };
@@ -315,63 +352,11 @@ export const CrisisMode: React.FC = () => {
         setRecoveryStartTime(Date.now());
     };
 
-    const handleSaveWithRecovery = () => {
-        // Validate recovery time (must be between 1 and 240 minutes)
-        const validRecoveryTime = recoveryTime !== undefined
-            ? Math.max(1, Math.min(240, Math.round(recoveryTime)))
-            : undefined;
-
-        // Save crisis event with recovery time
-        addCrisisEvent({
-            id: crypto.randomUUID(),
-            timestamp: startTime,
-            context: currentContext,
-            type: crisisType,
-            durationSeconds: seconds,
-            peakIntensity,
-            warningSignsObserved,
-            sensoryTriggers,
-            contextTriggers,
-            strategiesUsed,
-            resolution,
-            hasAudioRecording: !!audioUrl,
-            audioUrl: audioUrl || undefined,
-            notes,
-            recoveryTimeMinutes: validRecoveryTime
-        });
-
-        navigate('/');
-    };
-
-    const handleSkipRecovery = () => {
-        // Save without recovery time
-        addCrisisEvent({
-            id: crypto.randomUUID(),
-            timestamp: startTime,
-            context: currentContext,
-            type: crisisType,
-            durationSeconds: seconds,
-            peakIntensity,
-            warningSignsObserved,
-            sensoryTriggers,
-            contextTriggers,
-            strategiesUsed,
-            resolution,
-            hasAudioRecording: !!audioUrl,
-            audioUrl: audioUrl || undefined,
-            notes
-        });
-
-        navigate('/');
-    };
-
-    const handleMarkRecoveredNow = () => {
-        // Use elapsed time since crisis end as recovery time
-        const recoveryMins = Math.max(1, Math.round(recoveryElapsed / 60));
-        setRecoveryTime(recoveryMins);
-        // Then save
-        addCrisisEvent({
-            id: crypto.randomUUID(),
+    // Helper to create crisis event object
+    const createCrisisEventData = (recoveryMins?: number) => {
+        const crisisId = crypto.randomUUID();
+        return {
+            id: crisisId,
             timestamp: startTime,
             context: currentContext,
             type: crisisType,
@@ -386,7 +371,54 @@ export const CrisisMode: React.FC = () => {
             audioUrl: audioUrl || undefined,
             notes,
             recoveryTimeMinutes: recoveryMins
-        });
+        };
+    };
+
+    // Save crisis and optionally go to reflection
+    const saveCrisisAndGoToReflection = (recoveryMins?: number) => {
+        const eventData = createCrisisEventData(recoveryMins);
+        addCrisisEvent(eventData);
+
+        // Create a full CrisisEvent for the reflection component
+        const fullEvent: CrisisEvent = {
+            ...eventData,
+            dayOfWeek: undefined,
+            timeOfDay: undefined,
+            hourOfDay: undefined
+        };
+        setSavedCrisisEvent(fullEvent);
+        setShowRecoveryCapture(false);
+        setShowReflection(true);
+    };
+
+    const handleSaveWithRecovery = () => {
+        // Validate recovery time (must be between 1 and 240 minutes)
+        const validRecoveryTime = recoveryTime !== undefined
+            ? Math.max(1, Math.min(240, Math.round(recoveryTime)))
+            : undefined;
+
+        saveCrisisAndGoToReflection(validRecoveryTime);
+    };
+
+    const handleSkipRecovery = () => {
+        // Save without recovery time and go to reflection
+        saveCrisisAndGoToReflection(undefined);
+    };
+
+    const handleMarkRecoveredNow = () => {
+        // Use elapsed time since crisis end as recovery time
+        const recoveryMins = Math.max(1, Math.round(recoveryElapsed / 60));
+        saveCrisisAndGoToReflection(recoveryMins);
+    };
+
+    // Handler for reflection completion
+    const handleReflectionComplete = (reflection: Omit<CrisisReflectionType, 'id' | 'timestamp'>) => {
+        addCrisisReflection(reflection);
+        navigate('/');
+    };
+
+    // Handler for skipping reflection
+    const handleSkipReflection = () => {
         navigate('/');
     };
 
@@ -454,7 +486,36 @@ export const CrisisMode: React.FC = () => {
 
                 {/* Main Content */}
                 <AnimatePresence mode="wait">
-                    {!showDetailsForm && !showRecoveryCapture ? (
+                    {showReflection && savedCrisisEvent ? (
+                        // Reflection Phase
+                        <motion.div
+                            key="reflection"
+                            initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0 }}
+                            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
+                            className="flex-1 overflow-y-auto pb-8"
+                        >
+                            <div className="bg-green-500/10 border border-green-500/20 p-3 rounded-xl text-center mb-4">
+                                <div className="flex items-center justify-center gap-3">
+                                    <MessageSquare className="text-green-500" size={24} />
+                                    <div className="text-left">
+                                        <h3 className="text-base font-bold text-white">
+                                            {t('crisis.reflection.saved', 'Krise registrert')}
+                                        </h3>
+                                        <p className="text-slate-400 text-sm">
+                                            {t('crisis.reflection.subtitle', 'Ta et øyeblikk til å reflektere')}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <CrisisReflection
+                                crisisEvent={savedCrisisEvent}
+                                onComplete={handleReflectionComplete}
+                                onSkip={handleSkipReflection}
+                            />
+                        </motion.div>
+                    ) : !showDetailsForm && !showRecoveryCapture ? (
                         // Timer View
                         <motion.div
                             key="timer"
@@ -504,57 +565,113 @@ export const CrisisMode: React.FC = () => {
                                     <span className="text-xl font-bold">{t('crisis.stopEvent')}</span>
                                 </motion.button>
 
-                                {/* Mic permission denied warning */}
-                                {micPermissionState === 'denied' && !isRecording && (
-                                    <div className="bg-red-900/30 border border-red-700 p-3 rounded-xl">
-                                        <div className="flex items-start gap-2">
-                                            <AlertCircle size={18} className="text-red-400 mt-0.5 flex-shrink-0" />
-                                            <p className="text-red-300 text-sm">{t('crisis.micPermissionDenied')}</p>
-                                        </div>
-                                    </div>
-                                )}
+                                {/* Audio Recording UI - Hidden on native platforms */}
+                                {!isNative() && (
+                                    <>
+                                        {/* Mic permission denied warning */}
+                                        {micPermissionState === 'denied' && !isRecording && (
+                                            <div className="bg-red-900/30 border border-red-700 p-3 rounded-xl">
+                                                <div className="flex items-start gap-2">
+                                                    <AlertCircle size={18} className="text-red-400 mt-0.5 flex-shrink-0" />
+                                                    <p className="text-red-300 text-sm">{t('crisis.micPermissionDenied')}</p>
+                                                </div>
+                                            </div>
+                                        )}
 
-                                {/* Audio error message with retry */}
-                                {audioError && (
-                                    <div className="bg-amber-900/30 border border-amber-700 p-3 rounded-xl">
-                                        <div className="flex items-start gap-2">
-                                            <AlertCircle size={18} className="text-amber-400 mt-0.5 flex-shrink-0" />
-                                            <div className="flex-1">
-                                                <p className="text-amber-300 text-sm">{audioError}</p>
-                                                {pendingAudioBlob && (
-                                                    <button
-                                                        onClick={retryAudioEncoding}
-                                                        className="flex items-center gap-1 text-cyan-400 text-sm mt-2 hover:text-cyan-300"
+                                        {/* Audio error message with retry */}
+                                        {audioError && (
+                                            <div className="bg-amber-900/30 border border-amber-700 p-3 rounded-xl">
+                                                <div className="flex items-start gap-2">
+                                                    <AlertCircle size={18} className="text-amber-400 mt-0.5 flex-shrink-0" />
+                                                    <div className="flex-1">
+                                                        <p className="text-amber-300 text-sm">{audioError}</p>
+                                                        {pendingAudioBlob && (
+                                                            <button
+                                                                onClick={retryAudioEncoding}
+                                                                className="flex items-center gap-1 text-cyan-400 text-sm mt-2 hover:text-cyan-300"
+                                                            >
+                                                                <RefreshCw size={14} />
+                                                                {t('crisis.retryEncoding')}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Audio Recording Button with Enhanced Feedback */}
+                                        <motion.button
+                                            whileTap={{ scale: 0.98 }}
+                                            onClick={toggleRecording}
+                                            className={`w-full rounded-xl flex items-center justify-center gap-3 transition-all border relative overflow-hidden ${isRecording
+                                                ? 'h-20 bg-red-500/20 border-red-500 text-red-400'
+                                                : 'h-14 bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-700'
+                                                }`}
+                                            aria-label={isRecording ? t('crisis.stopRecording') : t('crisis.startRecording')}
+                                            aria-pressed={isRecording}
+                                        >
+                                            {/* Recording pulse overlay */}
+                                            {isRecording && (
+                                                <motion.div
+                                                    className="absolute inset-0 bg-red-500/10"
+                                                    animate={{ opacity: [0.1, 0.3, 0.1] }}
+                                                    transition={{ duration: 1.5, repeat: Infinity }}
+                                                />
+                                            )}
+                                            <div className="relative z-10 flex flex-col items-center gap-1">
+                                                <div className="flex items-center gap-2">
+                                                    {isRecording ? (
+                                                        <motion.div
+                                                            animate={{ scale: [1, 1.2, 1] }}
+                                                            transition={{ duration: 1, repeat: Infinity }}
+                                                            className="relative"
+                                                        >
+                                                            <Mic size={20} aria-hidden="true" />
+                                                            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+                                                        </motion.div>
+                                                    ) : (
+                                                        <Mic size={20} aria-hidden="true" />
+                                                    )}
+                                                    <span className="text-base font-medium">
+                                                        {isRecording ? t('crisis.stopRecording') : t('crisis.startRecording')}
+                                                    </span>
+                                                </div>
+                                                {/* Recording Duration Display */}
+                                                {isRecording && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: -5 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        className="flex items-center gap-2"
                                                     >
-                                                        <RefreshCw size={14} />
-                                                        {t('crisis.retryEncoding')}
-                                                    </button>
+                                                        <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+                                                        <span className="text-red-400 text-sm font-mono tabular-nums">
+                                                            {formatTime(audioRecordingSeconds)}
+                                                        </span>
+                                                        <span className="text-red-400/60 text-xs">
+                                                            {t('crisis.audioRecordingTime', 'recording')}
+                                                        </span>
+                                                    </motion.div>
                                                 )}
                                             </div>
-                                        </div>
-                                    </div>
+                                        </motion.button>
+                                    </>
                                 )}
-
-                                <motion.button
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={toggleRecording}
-                                    className={`w-full h-14 rounded-xl flex items-center justify-center gap-2 transition-all border ${isRecording
-                                        ? 'bg-red-500/20 border-red-500 text-red-400 animate-pulse'
-                                        : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-700'
-                                        }`}
-                                    aria-label={isRecording ? t('crisis.stopRecording') : t('crisis.startRecording')}
-                                    aria-pressed={isRecording}
-                                >
-                                    <Mic size={20} aria-hidden="true" />
-                                    <span className="text-base font-medium">{isRecording ? t('crisis.stopRecording') : t('crisis.startRecording')}</span>
-                                </motion.button>
                             </div>
 
-                            {isRecording && (
-                                <p className="text-red-400 text-sm text-center flex items-center justify-center gap-2">
-                                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                                    {t('crisis.recordingActive')}
-                                </p>
+                            {!isNative() && isRecording && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2 text-center"
+                                >
+                                    <p className="text-red-400 text-sm flex items-center justify-center gap-2">
+                                        <span className="relative flex h-2.5 w-2.5">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                                        </span>
+                                        {t('crisis.recordingActive')}
+                                    </p>
+                                </motion.div>
                             )}
                         </motion.div>
                     ) : showDetailsForm && !showRecoveryCapture ? (
@@ -761,27 +878,7 @@ export const CrisisMode: React.FC = () => {
                                     {[5, 10, 15, 20, 30, 45].map(mins => (
                                         <button
                                             key={mins}
-                                            onClick={() => {
-                                                // Save directly with selected recovery time
-                                                addCrisisEvent({
-                                                    id: crypto.randomUUID(),
-                                                    timestamp: startTime,
-                                                    context: currentContext,
-                                                    type: crisisType,
-                                                    durationSeconds: seconds,
-                                                    peakIntensity,
-                                                    warningSignsObserved,
-                                                    sensoryTriggers,
-                                                    contextTriggers,
-                                                    strategiesUsed,
-                                                    resolution,
-                                                    hasAudioRecording: !!audioUrl,
-                                                    audioUrl: audioUrl || undefined,
-                                                    notes,
-                                                    recoveryTimeMinutes: mins
-                                                });
-                                                navigate('/');
-                                            }}
+                                            onClick={() => saveCrisisAndGoToReflection(mins)}
                                             className="py-2.5 px-3 rounded-lg text-sm font-medium transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 active:bg-green-500 active:text-white"
                                         >
                                             {mins} min

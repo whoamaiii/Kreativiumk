@@ -4,10 +4,10 @@
  */
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode } from 'react';
 import { z } from 'zod';
-import type { CrisisEvent, ContextType } from '../types';
+import type { CrisisEvent, CrisisReflection, ContextType } from '../types';
 import { enrichCrisisEvent } from '../types';
 import { STORAGE_KEYS } from '../constants/storage';
-import { CrisisEventSchema, validateCrisisEvent } from '../utils/validation';
+import { CrisisEventSchema, CrisisReflectionSchema, validateCrisisEvent } from '../utils/validation';
 import { getStorageItem, safeSetItem, STORAGE_REFRESH_EVENT, debounce } from './storage';
 import type { CrisisContextType } from './types';
 
@@ -20,6 +20,9 @@ interface CrisisProviderProps {
 export const CrisisProvider: React.FC<CrisisProviderProps> = ({ children }) => {
     const [crisisEvents, setCrisisEvents] = useState<CrisisEvent[]>(() =>
         getStorageItem(STORAGE_KEYS.CRISIS_EVENTS, [], z.array(CrisisEventSchema))
+    );
+    const [crisisReflections, setCrisisReflections] = useState<CrisisReflection[]>(() =>
+        getStorageItem(STORAGE_KEYS.CRISIS_REFLECTIONS, [], z.array(CrisisReflectionSchema))
     );
 
     // Multi-tab sync and refresh event handling
@@ -116,8 +119,31 @@ export const CrisisProvider: React.FC<CrisisProviderProps> = ({ children }) => {
         ));
     }, [saveCrisisEvents]);
 
+    // Reflection management
+    const saveCrisisReflections = useCallback((updater: CrisisReflection[] | ((prev: CrisisReflection[]) => CrisisReflection[])) => {
+        setCrisisReflections(prevReflections => {
+            const newReflections = typeof updater === 'function' ? updater(prevReflections) : updater;
+            safeSetItem(STORAGE_KEYS.CRISIS_REFLECTIONS, JSON.stringify(newReflections));
+            return newReflections;
+        });
+    }, []);
+
+    const addCrisisReflection = useCallback((reflection: Omit<CrisisReflection, 'id' | 'timestamp'>) => {
+        const fullReflection: CrisisReflection = {
+            ...reflection,
+            id: crypto.randomUUID(),
+            timestamp: new Date().toISOString()
+        };
+        saveCrisisReflections(prev => [fullReflection, ...prev]);
+    }, [saveCrisisReflections]);
+
+    const getReflectionForCrisis = useCallback((crisisId: string) => {
+        return crisisReflections.find(r => r.crisisId === crisisId);
+    }, [crisisReflections]);
+
     const value = useMemo<CrisisContextType>(() => ({
         crisisEvents,
+        crisisReflections,
         addCrisisEvent,
         updateCrisisEvent,
         deleteCrisisEvent,
@@ -125,8 +151,10 @@ export const CrisisProvider: React.FC<CrisisProviderProps> = ({ children }) => {
         getAverageCrisisDuration,
         getCrisisCountByType,
         getCrisisEventsByContext,
-        updateCrisisRecoveryTime
-    }), [crisisEvents, addCrisisEvent, updateCrisisEvent, deleteCrisisEvent, getCrisisByDateRange, getAverageCrisisDuration, getCrisisCountByType, getCrisisEventsByContext, updateCrisisRecoveryTime]);
+        updateCrisisRecoveryTime,
+        addCrisisReflection,
+        getReflectionForCrisis
+    }), [crisisEvents, crisisReflections, addCrisisEvent, updateCrisisEvent, deleteCrisisEvent, getCrisisByDateRange, getAverageCrisisDuration, getCrisisCountByType, getCrisisEventsByContext, updateCrisisRecoveryTime, addCrisisReflection, getReflectionForCrisis]);
 
     return (
         <CrisisContext.Provider value={value}>

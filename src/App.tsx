@@ -1,10 +1,12 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom';
-import { Suspense, lazy, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Suspense, lazy, useCallback, useEffect } from 'react';
 import { DataProvider, useSettings } from './store';
 import { Layout } from './components/Layout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
 import { ToastProvider, StorageErrorListener } from './components/Toast';
+import { ModelProvider } from './contexts/ModelContext';
+import { ModelDownloadPrompt } from './components/ModelDownloadPrompt';
 
 // Eagerly loaded - these are on the main navigation path
 import { Home } from './components/Home';
@@ -37,6 +39,17 @@ const NotFound = lazy(() => import('./components/NotFound').then(m => ({ default
 
 // Lazy loaded onboarding
 const OnboardingWizard = lazy(() => import('./components/onboarding/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
+
+// Scroll to top on route change - ensures pages always start at the top
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
 
 
 
@@ -166,13 +179,18 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        <ScrollToTop />
         <DataProvider>
-          <ToastProvider>
-            <StorageErrorListener />
-            {/* CSS background always visible - shader loads in ProtectedLayout */}
-            <CSSBackground />
-            <AppContent />
-          </ToastProvider>
+          <ModelProvider>
+            <ToastProvider>
+              <StorageErrorListener />
+              {/* First-launch model download prompt (Android only) */}
+              <ModelDownloadPrompt />
+              {/* CSS background always visible - shader loads in ProtectedLayout */}
+              <CSSBackground />
+              <AppContent />
+            </ToastProvider>
+          </ModelProvider>
         </DataProvider>
       </BrowserRouter>
     </ErrorBoundary>

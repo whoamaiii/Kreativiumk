@@ -372,9 +372,24 @@ export const prepareAnalysisData = (
     const { oldest: oldestDate, newest: newestDate } = getLogsDateRange(logs);
     const totalDays = Math.ceil((newestDate.getTime() - oldestDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
+    const preparedLogs = prepareLogsForAnalysis(logs, newestDate);
+    const preparedCrisis = prepareCrisisEventsForAnalysis(crisisEvents, newestDate);
+
+    // Debug logging to verify real data is being sent to AI
+    if (import.meta.env.DEV) {
+        console.log('[AI Data Preparation] ══════════════════════════════════════');
+        console.log(`📊 Preparing ${logs.length} logs and ${crisisEvents.length} crisis events for AI analysis`);
+        console.log(`📅 Date range: ${totalDays} days (${oldestDate.toLocaleDateString()} → ${newestDate.toLocaleDateString()})`);
+        console.log('📋 Sample prepared log:', preparedLogs[0]);
+        if (preparedCrisis.length > 0) {
+            console.log('🚨 Sample prepared crisis:', preparedCrisis[0]);
+        }
+        console.log('════════════════════════════════════════════════════════════');
+    }
+
     return {
-        preparedLogs: prepareLogsForAnalysis(logs, newestDate),
-        preparedCrisis: prepareCrisisEventsForAnalysis(crisisEvents, newestDate),
+        preparedLogs,
+        preparedCrisis,
         totalDays,
         dateRangeStart: oldestDate.toISOString(),
         dateRangeEnd: newestDate.toISOString(),
@@ -535,7 +550,7 @@ export const buildChildProfileContext = (profile: ChildProfile | null): string =
         parts.push(`Barnet: ${nameAge}`);
     }
 
-    if (profile.diagnoses.length > 0) {
+    if (profile.diagnoses?.length > 0) {
         parts.push(`Diagnoser: ${profile.diagnoses.join(', ')}`);
     }
 
@@ -543,14 +558,14 @@ export const buildChildProfileContext = (profile: ChildProfile | null): string =
         parts.push(`Kommunikasjon: ${COMM_STYLE_MAP[profile.communicationStyle] || profile.communicationStyle}`);
     }
 
-    if (profile.sensorySensitivities.length > 0) {
+    if (profile.sensorySensitivities?.length > 0) {
         parts.push(`Sensoriske utfordringer: ${profile.sensorySensitivities.join(', ')}`);
     }
-    if (profile.seekingSensory.length > 0) {
+    if (profile.seekingSensory?.length > 0) {
         parts.push(`Sensorisk søking: ${profile.seekingSensory.join(', ')}`);
     }
 
-    if (profile.effectiveStrategies.length > 0) {
+    if (profile.effectiveStrategies?.length > 0) {
         parts.push(`Kjente effektive strategier: ${profile.effectiveStrategies.join(', ')}`);
     }
 

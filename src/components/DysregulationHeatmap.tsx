@@ -5,7 +5,7 @@ import { ArrowLeft, Info, AlertTriangle, TrendingUp, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
-// Time blocks for the heatmap (Norwegian labels)
+// Time blocks for the heatmap
 const TIME_BLOCKS = [
     { id: 'morning', label: '06-09', start: 6, end: 9 },
     { id: 'late_morning', label: '09-12', start: 9, end: 12 },
@@ -14,16 +14,8 @@ const TIME_BLOCKS = [
     { id: 'evening', label: '18-21', start: 18, end: 21 },
 ] as const;
 
-// Days of the week (Norwegian)
-const DAYS = [
-    { id: 'monday', label: 'Man', fullLabel: 'Mandag' },
-    { id: 'tuesday', label: 'Tir', fullLabel: 'Tirsdag' },
-    { id: 'wednesday', label: 'Ons', fullLabel: 'Onsdag' },
-    { id: 'thursday', label: 'Tor', fullLabel: 'Torsdag' },
-    { id: 'friday', label: 'Fre', fullLabel: 'Fredag' },
-    { id: 'saturday', label: 'Lør', fullLabel: 'Lørdag' },
-    { id: 'sunday', label: 'Søn', fullLabel: 'Søndag' },
-] as const;
+// Day IDs for the week (labels come from i18n)
+const DAY_IDS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 
 interface HeatmapCell {
     day: string;
@@ -73,16 +65,20 @@ export const DysregulationHeatmap: React.FC = () => {
     const { crisisEvents } = useCrisis();
     const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
 
+    // Helper to get translated day labels
+    const getDayLabel = (dayId: string) => t(`heatmap.days.${dayId}.short`);
+    const getDayFullLabel = (dayId: string) => t(`heatmap.days.${dayId}.full`);
+
     // Process logs and crisis events into heatmap data
     const heatmapData = useMemo(() => {
         const cellMap = new Map<string, HeatmapCell>();
 
         // Initialize all cells
-        DAYS.forEach(day => {
+        DAY_IDS.forEach(dayId => {
             TIME_BLOCKS.forEach(block => {
-                const key = `${day.id}-${block.id}`;
+                const key = `${dayId}-${block.id}`;
                 cellMap.set(key, {
-                    day: day.id,
+                    day: dayId,
                     timeBlock: block.id,
                     avgArousal: 0,
                     logCount: 0,
@@ -100,8 +96,8 @@ export const DysregulationHeatmap: React.FC = () => {
             const hour = date.getHours();
             const dayOfWeek = date.getDay();
 
-            // Map JS day (0=Sunday) to our DAYS array
-            const dayId = DAYS[(dayOfWeek + 6) % 7]?.id; // Convert to Monday-first
+            // Map JS day (0=Sunday) to our DAY_IDS array
+            const dayId = DAY_IDS[(dayOfWeek + 6) % 7]; // Convert to Monday-first
 
             // Find matching time block
             const timeBlock = TIME_BLOCKS.find(b => hour >= b.start && hour < b.end);
@@ -131,7 +127,7 @@ export const DysregulationHeatmap: React.FC = () => {
             const hour = date.getHours();
             const dayOfWeek = date.getDay();
 
-            const dayId = DAYS[(dayOfWeek + 6) % 7]?.id;
+            const dayId = DAY_IDS[(dayOfWeek + 6) % 7];
             const timeBlock = TIME_BLOCKS.find(b => hour >= b.start && hour < b.end);
             if (!dayId || !timeBlock) return;
 
@@ -153,15 +149,15 @@ export const DysregulationHeatmap: React.FC = () => {
             .slice(0, 3);
 
         return cells.map(cell => {
-            const day = DAYS.find(d => d.id === cell.day);
             const block = TIME_BLOCKS.find(b => b.id === cell.timeBlock);
             return {
                 ...cell,
-                dayLabel: day?.fullLabel || cell.day,
+                dayLabel: getDayFullLabel(cell.day),
                 timeLabel: block?.label || cell.timeBlock,
             };
         });
-    }, [heatmapData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [heatmapData, t]);
 
     // Overall statistics
     const stats = useMemo(() => {
@@ -228,9 +224,9 @@ export const DysregulationHeatmap: React.FC = () => {
                 {/* Grid Header - Days */}
                 <div className="grid grid-cols-8 gap-1 mb-1">
                     <div className="h-8" /> {/* Empty corner */}
-                    {DAYS.map(day => (
-                        <div key={day.id} className="h-8 flex items-center justify-center">
-                            <span className="text-xs font-medium text-slate-300">{day.label}</span>
+                    {DAY_IDS.map(dayId => (
+                        <div key={dayId} className="h-8 flex items-center justify-center">
+                            <span className="text-xs font-medium text-slate-300">{getDayLabel(dayId)}</span>
                         </div>
                     ))}
                 </div>
@@ -244,12 +240,13 @@ export const DysregulationHeatmap: React.FC = () => {
                         </div>
 
                         {/* Day cells */}
-                        {DAYS.map(day => {
-                            const key = `${day.id}-${block.id}`;
+                        {DAY_IDS.map(dayId => {
+                            const key = `${dayId}-${block.id}`;
                             const cell = heatmapData.get(key);
                             const arousal = cell?.avgArousal || 0;
                             const count = cell?.logCount || 0;
                             const crises = cell?.crisisCount || 0;
+                            const dayFullLabel = getDayFullLabel(dayId);
 
                             return (
                                 <motion.div
@@ -259,8 +256,8 @@ export const DysregulationHeatmap: React.FC = () => {
                                     onClick={() => {
                                         if (count > 0) {
                                             setSelectedCell({
-                                                day: day.id,
-                                                dayLabel: day.fullLabel,
+                                                day: dayId,
+                                                dayLabel: dayFullLabel,
                                                 timeBlock: block.id,
                                                 timeLabel: block.label,
                                                 avgArousal: arousal,
@@ -279,14 +276,14 @@ export const DysregulationHeatmap: React.FC = () => {
                                     `}
                                     title={count > 0 ? `${t('heatmap.avgArousal')}: ${arousal.toFixed(1)}, ${t('heatmap.logs')}: ${count}` : t('heatmap.noData')}
                                     role={count > 0 ? 'button' : undefined}
-                                    aria-label={count > 0 ? `${day.fullLabel} ${block.label}: ${t('heatmap.avgArousal')} ${arousal.toFixed(1)}, ${count} ${t('heatmap.logs')}` : undefined}
+                                    aria-label={count > 0 ? `${dayFullLabel} ${block.label}: ${t('heatmap.avgArousal')} ${arousal.toFixed(1)}, ${count} ${t('heatmap.logs')}` : undefined}
                                     tabIndex={count > 0 ? 0 : -1}
                                     onKeyDown={(e) => {
                                         if (count > 0 && (e.key === 'Enter' || e.key === ' ')) {
                                             e.preventDefault();
                                             setSelectedCell({
-                                                day: day.id,
-                                                dayLabel: day.fullLabel,
+                                                day: dayId,
+                                                dayLabel: dayFullLabel,
                                                 timeBlock: block.id,
                                                 timeLabel: block.label,
                                                 avgArousal: arousal,
@@ -314,7 +311,7 @@ export const DysregulationHeatmap: React.FC = () => {
 
                 {/* Legend */}
                 <div className="mt-4 pt-4 border-t border-white/10">
-                    <p className="text-xs text-slate-400 mb-2">Arousal-nivå:</p>
+                    <p className="text-xs text-slate-400 mb-2">{t('heatmap.legend.title', 'Arousal level')}:</p>
                     <div className="flex items-center gap-1">
                         <div className="flex-1 h-4 rounded bg-emerald-500/70" />
                         <div className="flex-1 h-4 rounded bg-yellow-400/70" />
@@ -322,8 +319,8 @@ export const DysregulationHeatmap: React.FC = () => {
                         <div className="flex-1 h-4 rounded bg-red-600/80" />
                     </div>
                     <div className="flex justify-between mt-1">
-                        <span className="text-[10px] text-slate-500">Lav (1-3)</span>
-                        <span className="text-[10px] text-slate-500">Høy (8-10)</span>
+                        <span className="text-[10px] text-slate-500">{t('heatmap.legend.low', 'Low (1-3)')}</span>
+                        <span className="text-[10px] text-slate-500">{t('heatmap.legend.high', 'High (8-10)')}</span>
                     </div>
                 </div>
             </motion.div>
@@ -338,7 +335,7 @@ export const DysregulationHeatmap: React.FC = () => {
                 >
                     <div className="flex items-center gap-2 mb-4">
                         <AlertTriangle size={18} className="text-orange-400" />
-                        <h2 className="text-lg font-bold text-white">Sårbare Tidspunkt</h2>
+                        <h2 className="text-lg font-bold text-white">{t('heatmap.vulnerableTimes', 'Vulnerable Times')}</h2>
                     </div>
                     <div className="space-y-3">
                         {hotspots.map((spot) => (
@@ -355,12 +352,12 @@ export const DysregulationHeatmap: React.FC = () => {
                                     </div>
                                     <div>
                                         <p className="text-white font-medium">{spot.dayLabel} {spot.timeLabel}</p>
-                                        <p className="text-slate-400 text-xs">{spot.logCount} logger</p>
+                                        <p className="text-slate-400 text-xs">{spot.logCount} {t('heatmap.logs')}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-xl font-bold text-white">{spot.avgArousal.toFixed(1)}</p>
-                                    <p className="text-xs text-slate-400">snitt arousal</p>
+                                    <p className="text-xs text-slate-400">{t('heatmap.avgArousalLabel')}</p>
                                 </div>
                             </div>
                         ))}
@@ -377,28 +374,30 @@ export const DysregulationHeatmap: React.FC = () => {
             >
                 <div className="flex items-center gap-2 mb-4">
                     <TrendingUp size={18} className="text-primary" />
-                    <h2 className="text-lg font-bold text-white">Innsikt</h2>
+                    <h2 className="text-lg font-bold text-white">{t('heatmap.insights')}</h2>
                 </div>
                 <div className="space-y-3 text-sm text-slate-300">
                     {hotspots.length > 0 ? (
                         <>
                             <p>
-                                <span className="text-white font-medium">Hovedfunn:</span>{' '}
-                                Høyest arousal observeres på <span className="text-orange-400 font-medium">
-                                    {hotspots[0]?.dayLabel} kl. {hotspots[0]?.timeLabel}
-                                </span> med snitt {hotspots[0]?.avgArousal?.toFixed(1)}.
+                                <span className="text-white font-medium">{t('heatmap.mainFinding')}:</span>{' '}
+                                {t('heatmap.highestArousalAt', {
+                                    day: hotspots[0]?.dayLabel,
+                                    time: hotspots[0]?.timeLabel,
+                                    avg: hotspots[0]?.avgArousal?.toFixed(1),
+                                    defaultValue: `Highest arousal observed at ${hotspots[0]?.dayLabel} ${hotspots[0]?.timeLabel} with average ${hotspots[0]?.avgArousal?.toFixed(1)}.`
+                                })}
                             </p>
                             {hotspots.length > 1 && (
                                 <p>
-                                    <span className="text-white font-medium">Tips:</span>{' '}
-                                    Vurder forebyggende tiltak rundt disse tidspunktene - ekstra støtte,
-                                    reduserte krav, eller planlagte pauser.
+                                    <span className="text-white font-medium">{t('heatmap.tip')}:</span>{' '}
+                                    {t('heatmap.tipContent', 'Consider preventive measures around these times - extra support, reduced demands, or planned breaks.')}
                                 </p>
                             )}
                         </>
                     ) : (
                         <p className="text-slate-400">
-                            Logg flere hendelser for å se mønstre over tid. Kartet viser når arousal er høyest.
+                            {t('heatmap.logMoreForPatterns', 'Log more events to see patterns over time. The map shows when arousal is highest.')}
                         </p>
                     )}
                 </div>

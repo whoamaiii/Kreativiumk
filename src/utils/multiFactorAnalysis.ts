@@ -266,8 +266,7 @@ function generateFactorCombinations(
  */
 function calculateChiSquared(
     observed: number,
-    expected: number,
-    _total: number
+    expected: number
 ): { chiSquared: number; pValue: number } {
     if (expected === 0) {
         return { chiSquared: 0, pValue: 1 };
@@ -421,8 +420,7 @@ export function analyzeMultiFactorPatterns(
         // Chi-squared test with proper p-value
         const { pValue } = calculateChiSquared(
             stats.outcomeCount,
-            expectedOutcomes,
-            logs.length
+            expectedOutcomes
         );
 
         // Calculate Wilson score confidence interval

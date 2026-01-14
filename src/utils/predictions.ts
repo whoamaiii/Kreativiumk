@@ -389,7 +389,7 @@ export const calculateRiskForecast = (
     const weightedHighArousalRate = totalWeight > 0
         ? weightedHighArousalSum / totalWeight
         : 0;
-    let arousalScore = Math.round(weightedHighArousalRate * 100);
+    const arousalScore = Math.round(weightedHighArousalRate * 100);
     const recencyWeightedScore = arousalScore;
 
     // 5. Calculate multi-factor scores

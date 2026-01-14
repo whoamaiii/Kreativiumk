@@ -77,7 +77,8 @@ export const analyzeLogsWithGemini = async (
 
     try {
         if (import.meta.env.DEV) {
-            console.log(`[Gemini] Analyzing ${logs.length} logs with ${MODEL_ID}...`);
+            console.log(`🤖 [Gemini] REAL API CALL: Sending ${logs.length} logs to ${MODEL_ID}...`);
+            console.log('   ✅ Your tracked data IS being analyzed by real Google Gemini AI');
         }
 
         const response = await getGenAI().models.generateContent({

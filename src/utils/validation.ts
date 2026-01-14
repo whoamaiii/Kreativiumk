@@ -18,6 +18,9 @@ export const TimeOfDaySchema = z.enum(['morning', 'midday', 'afternoon', 'evenin
 // Strategy effectiveness
 export const StrategyEffectivenessSchema = z.enum(['helped', 'no_change', 'escalated']);
 
+// Quick log level (for traffic light quick entry)
+export const QuickLogLevelSchema = z.enum(['good', 'struggling', 'crisis']);
+
 // ============================================
 // LOG ENTRY SCHEMA
 // ============================================
@@ -37,6 +40,7 @@ export const LogEntrySchema = z.object({
     dayOfWeek: DayOfWeekSchema.optional(),
     timeOfDay: TimeOfDaySchema.optional(),
     hourOfDay: z.number().int().min(0).max(23).optional(),
+    quickLogLevel: QuickLogLevelSchema.optional(),
 });
 
 // Schema for creating a new log (without computed fields)
@@ -202,6 +206,41 @@ export const AnalysisResultSchema = z.object({
     summary: z.string(),
     isDeepAnalysis: z.boolean().optional(),
     modelUsed: z.string().optional(),
+});
+
+// ============================================
+// CRISIS REFLECTION SCHEMA
+// ============================================
+export const ReflectionEmotionalStateSchema = z.enum([
+    'calm', 'tired', 'anxious', 'sad', 'relieved', 'frustrated'
+]);
+
+export const CrisisReflectionSchema = z.object({
+    id: z.string().uuid(),
+    crisisId: z.string().uuid(),
+    timestamp: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/)),
+
+    // Immediate post-crisis state
+    immediateArousal: z.number().int().min(1).max(10).optional(),
+    immediateEnergy: z.number().int().min(1).max(10).optional(),
+    immediateValence: z.number().int().min(1).max(10).optional(),
+    currentEmotionalState: ReflectionEmotionalStateSchema.optional(),
+    mostHelpfulStrategy: z.string().optional(),
+
+    // Guided reflection answers
+    mainTriggerIdentified: z.string().optional(),
+    strategiesThatHelped: z.array(z.string()).optional(),
+    strategiesThatDidntHelp: z.array(z.string()).optional(),
+    preventionIdeas: z.array(z.string()).optional(),
+    supportNeeded: z.array(z.string()).optional(),
+
+    // Caregiver notes
+    caregiverObservations: z.string().optional(),
+    environmentFactors: z.string().optional(),
+
+    // Optional follow-up
+    needsFollowUp: z.boolean().optional(),
+    followUpNotes: z.string().optional(),
 });
 
 // ============================================

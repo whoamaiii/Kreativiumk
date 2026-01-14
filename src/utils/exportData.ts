@@ -12,6 +12,9 @@ import type {
     DailyScheduleTemplate
 } from '../types';
 import { STORAGE_KEYS, STORAGE_PREFIXES } from '../constants/storage';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
+import { isNative } from './platform';
 import {
     validateExportData,
     formatValidationErrors,
@@ -206,23 +209,48 @@ export function exportAllData(): ExportedData {
 
 /**
  * Downloads the exported data as a JSON file
+ * Uses Capacitor Filesystem + Share on native, browser download on web
  */
-export function downloadExport(): void {
+export async function downloadExport(): Promise<void> {
     const data = exportAllData();
     const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
     const date = new Date().toISOString().split('T')[0];
     const filename = `kreativium-backup-${date}.json`;
 
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (isNative()) {
+        try {
+            // Write file to device cache directory
+            const result = await Filesystem.writeFile({
+                path: filename,
+                data: json,
+                directory: Directory.Cache,
+                encoding: Encoding.UTF8
+            });
+
+            // Share the file so user can save it where they want
+            await Share.share({
+                title: 'NeuroLogg Pro Backup',
+                text: 'Your NeuroLogg Pro data backup',
+                url: result.uri,
+                dialogTitle: 'Save backup file'
+            });
+        } catch (error) {
+            console.error('[exportData] Native export failed:', error);
+            throw new Error('Failed to export data on this device');
+        }
+    } else {
+        // Web/PWA: Use traditional browser download
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
 }
 
 /**

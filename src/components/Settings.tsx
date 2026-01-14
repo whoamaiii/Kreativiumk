@@ -17,7 +17,8 @@ import {
     Upload,
     Database,
     RefreshCw,
-    Sparkles
+    Sparkles,
+    TrendingUp
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { ChildProfile } from '../types';
@@ -33,6 +34,7 @@ import { useTranslation } from 'react-i18next';
 import { generateUUID } from '../utils/uuid';
 import { useSettings } from '../store';
 import { useToast } from './Toast';
+import { ModelManager } from './ModelManager';
 
 // Multi-select chip component with keyboard accessibility
 const ChipSelect: React.FC<{
@@ -92,8 +94,8 @@ const ChipSelect: React.FC<{
 export const Settings: React.FC = () => {
     const { t } = useTranslation();
     const { childProfile, setChildProfile, updateChildProfile, clearChildProfile } = useChildProfile();
-    const { refreshData } = useSettings();
-    const { showSuccess } = useToast();
+    const { refreshData, analysisSettings, updateAnalysisSettings } = useSettings();
+    const { showSuccess, showError } = useToast();
 
     // Loading state for perceived performance
     const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -187,9 +189,16 @@ export const Settings: React.FC = () => {
         setShowDeleteConfirm(false);
     };
 
-    // Export handler
-    const handleExport = () => {
-        downloadExport();
+    // Export handler with native support
+    const handleExport = async () => {
+        try {
+            await downloadExport();
+        } catch (error) {
+            if (import.meta.env.DEV) {
+                console.error('[Settings] Export failed:', error);
+            }
+            showError(t('settings.export.title'), t('settings.export.error', 'Export failed. Please try again.'));
+        }
     };
 
     // Import file selection handler with error handling
@@ -208,8 +217,13 @@ export const Settings: React.FC = () => {
         const reader = new FileReader();
 
         reader.onload = (event) => {
-            const content = event.target?.result as string;
-            setPendingImportData(content);
+            const result = event.target?.result;
+            if (typeof result !== 'string') {
+                setImportResult({ success: false, error: t('settings.import.readError') });
+                setShowImportModal(true);
+                return;
+            }
+            setPendingImportData(result);
             setShowImportModal(true);
         };
 
@@ -460,6 +474,15 @@ export const Settings: React.FC = () => {
                 </div>
             </motion.div>
 
+            {/* Local AI Model Section (Android only) */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+            >
+                <ModelManager />
+            </motion.div>
+
             {/* Data Management Section */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -517,6 +540,7 @@ export const Settings: React.FC = () => {
                             onChange={handleFileSelect}
                             accept=".json"
                             className="hidden"
+                            aria-label={t('settings.dataManagement.import.button')}
                         />
                     </div>
 
@@ -568,6 +592,56 @@ export const Settings: React.FC = () => {
                     <span>{t('settings.stats.logs')}: {dataStats.logs}</span>
                     <span>{t('settings.stats.events')}: {dataStats.crisis}</span>
                     <span>{t('settings.stats.goals')}: {dataStats.goals}</span>
+                </div>
+            </motion.div>
+
+            {/* Analysis Settings Section */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="liquid-glass-card p-5 rounded-3xl space-y-6"
+            >
+                <div className="flex items-center gap-2 mb-4">
+                    <TrendingUp size={18} className="text-cyan-400" />
+                    <h2 className="text-lg font-bold text-white">{t('settings.analysis.title', 'Analyse-innstillinger')}</h2>
+                </div>
+
+                {/* Recency Decay Half-Life Slider */}
+                <div>
+                    <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm text-slate-400">
+                            {t('settings.analysis.recencyDecay.label', 'Dataforfall (halveringstid)')}
+                        </label>
+                        <span className="text-sm font-medium text-cyan-400">
+                            {analysisSettings.recencyDecayHalfLife} {t('settings.analysis.recencyDecay.days', 'dager')}
+                        </span>
+                    </div>
+                    <input
+                        type="range"
+                        min={3}
+                        max={21}
+                        step={1}
+                        value={analysisSettings.recencyDecayHalfLife}
+                        onChange={(e) => updateAnalysisSettings({ recencyDecayHalfLife: parseInt(e.target.value, 10) })}
+                        className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                    />
+                    <div className="flex justify-between text-xs text-slate-500 mt-1">
+                        <span>{t('settings.analysis.recencyDecay.fast', 'Rask (3d)')}</span>
+                        <span>{t('settings.analysis.recencyDecay.slow', 'Langsom (21d)')}</span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-3">
+                        {t('settings.analysis.recencyDecay.description', 'Hvor raskt gammel data mister betydning i prediksjoner. Lavere verdi = nyere data teller mer.')}
+                    </p>
+                    <div className="mt-3 p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+                        <p className="text-xs text-cyan-300">
+                            {analysisSettings.recencyDecayHalfLife <= 5
+                                ? t('settings.analysis.recencyDecay.hint.fast', '⚡ Rask tilpasning: Bra for barn med hyppig endring i mønstre')
+                                : analysisSettings.recencyDecayHalfLife >= 14
+                                ? t('settings.analysis.recencyDecay.hint.slow', '🐢 Langsom tilpasning: Bra for barn med stabile mønstre over tid')
+                                : t('settings.analysis.recencyDecay.hint.balanced', '⚖️ Balansert: God for de fleste barn')}
+                        </p>
+                    </div>
                 </div>
             </motion.div>
 

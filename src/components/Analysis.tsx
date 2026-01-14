@@ -159,6 +159,8 @@ export const Analysis: React.FC = () => {
     };
 
     const dateLocale = i18n.language === 'no' ? nb : enUS;
+    // Use locale-appropriate date format: "Monday 12. January" (NO) vs "Monday, January 12" (EN)
+    const dateFormat = i18n.language === 'no' ? 'EEEE d. MMMM' : 'EEEE, MMMM d';
 
     return (
         <div className="flex flex-col gap-6 pb-24">
@@ -290,7 +292,7 @@ export const Analysis: React.FC = () => {
                                         <div>
                                             <div className="flex items-center gap-2 text-slate-300 text-sm font-medium">
                                                 <Calendar size={14} className="text-slate-500" />
-                                                {format(new Date(log.timestamp), 'EEEE d. MMMM', { locale: dateLocale })}
+                                                {format(new Date(log.timestamp), dateFormat, { locale: dateLocale })}
                                                 <span className="text-slate-600">•</span>
                                                 <Clock size={14} className="text-slate-500" />
                                                 {format(new Date(log.timestamp), 'HH:mm')}

@@ -16,6 +16,12 @@ import {
     parseAnalysisResponse,
     type StreamCallbacks
 } from './aiCommon';
+import {
+    isLocalModelReady,
+    analyzeLogsWithLocalModel,
+    clearLocalAnalysisCache
+} from './localModel';
+import { isNative } from '../utils/platform';
 
 // =============================================================================
 // CONFIGURATION
@@ -597,6 +603,24 @@ export const analyzeLogs = async (
     // Deduplicate concurrent requests
     const dedupeKey = `regular:${generateLogsHash(logs, crisisEvents)}`;
     return deduplicatedRequest(dedupeKey, async () => {
+    // LOCAL MODEL FIRST: Try local Gemma 3 on native Android
+    if (isNative()) {
+        try {
+            const localReady = await isLocalModelReady();
+            if (localReady) {
+                if (import.meta.env.DEV) {
+                    console.log('[AI] Using local Gemma 3 model for analysis...');
+                }
+                return await analyzeLogsWithLocalModel(logs, crisisEvents, options.childProfile);
+            }
+        } catch (localError) {
+            if (import.meta.env.DEV) {
+                console.warn('[AI] Local model failed, falling back to cloud:', localError);
+            }
+            // Fall through to cloud APIs
+        }
+    }
+
     // Try Gemini first
     if (USE_GEMINI_FALLBACK && isGeminiConfigured()) {
         try {
@@ -630,7 +654,8 @@ export const analyzeLogs = async (
     // If no API key, return mock data
     if (!OPENROUTER_API_KEY) {
         if (import.meta.env.DEV) {
-            console.log('No API key found, returning mock analysis');
+            console.warn('⚠️ [AI] No API key found - returning MOCK analysis (not real AI)');
+            console.warn('   To enable real AI analysis, add VITE_GEMINI_API_KEY or VITE_OPENROUTER_API_KEY to .env');
         }
         return generateMockAnalysis();
     }
@@ -641,7 +666,8 @@ export const analyzeLogs = async (
 
     try {
         if (import.meta.env.DEV) {
-            console.log(`[OpenRouter] Analyzing ${logs.length} logs with ${FREE_MODEL_ID}...`);
+            console.log(`🤖 [AI] REAL API CALL: Sending ${logs.length} logs to ${FREE_MODEL_ID}...`);
+            console.log('   Your tracked data IS being analyzed by real AI');
         }
 
         const response = await callWithRetry(
@@ -687,7 +713,7 @@ export const analyzeLogs = async (
 
 /**
  * Performs DEEP analysis using premium cloud models
- * Uses Gemini as primary, falls back to OpenRouter premium models
+ * Uses local Gemma 3 if available, then Gemini, falls back to OpenRouter premium models
  */
 export const analyzeLogsDeep = async (
     logs: LogEntry[],
@@ -702,6 +728,27 @@ export const analyzeLogsDeep = async (
     // Deduplicate concurrent requests
     const dedupeKey = `deep:${generateLogsHash(logs, crisisEvents)}`;
     return deduplicatedRequest(dedupeKey, async () => {
+    // LOCAL MODEL FIRST: Try local Gemma 3 on native Android
+    if (isNative()) {
+        try {
+            const localReady = await isLocalModelReady();
+            if (localReady) {
+                if (import.meta.env.DEV) {
+                    console.log('[AI] Using local Gemma 3 model for deep analysis...');
+                }
+                const result = await analyzeLogsWithLocalModel(logs, crisisEvents, options.childProfile);
+                // Mark as deep analysis from local model
+                result.isDeepAnalysis = true;
+                return { ...result, modelUsed: 'gemma-3-4b-it-int4 (local)' };
+            }
+        } catch (localError) {
+            if (import.meta.env.DEV) {
+                console.warn('[AI] Local model deep analysis failed, falling back to cloud:', localError);
+            }
+            // Fall through to cloud APIs
+        }
+    }
+
     // Try Gemini first
     if (USE_GEMINI_FALLBACK && isGeminiConfigured()) {
         try {
@@ -837,11 +884,12 @@ VIKTIG: Dette er en DYP ANALYSE. Bruk mer tid på å tenke gjennom sammenhenger.
 };
 
 /**
- * Clears the analysis cache
+ * Clears the analysis cache (including local model cache)
  */
 export const clearAnalysisCache = (): void => {
     cache.clear();
     clearGeminiCache();
+    clearLocalAnalysisCache();
 };
 
 /**
@@ -866,7 +914,7 @@ export const getApiStatus = (): {
 
 /**
  * Streaming analysis - Shows AI "thinking" in real-time for WOW factor
- * Uses Gemini as primary, falls back to OpenRouter
+ * Uses local Gemma 3 if available (non-streaming), then Gemini, falls back to OpenRouter
  */
 export const analyzeLogsStreaming = async (
     logs: LogEntry[],
@@ -874,6 +922,28 @@ export const analyzeLogsStreaming = async (
     callbacks: StreamCallbacks,
     options: { childProfile?: ChildProfile | null } = {}
 ): Promise<AnalysisResult> => {
+    // LOCAL MODEL FIRST: Use local Gemma 3 on native Android (non-streaming, but private)
+    if (isNative()) {
+        try {
+            const localReady = await isLocalModelReady();
+            if (localReady) {
+                if (import.meta.env.DEV) {
+                    console.log('[AI] Using local Gemma 3 for analysis (non-streaming)...');
+                }
+                // Local model doesn't support streaming, but privacy is more important
+                const result = await analyzeLogsWithLocalModel(logs, crisisEvents, options.childProfile);
+                // Notify completion via callback
+                callbacks.onComplete?.(result.summary || '');
+                return result;
+            }
+        } catch (localError) {
+            if (import.meta.env.DEV) {
+                console.warn('[AI] Local model failed, falling back to cloud streaming:', localError);
+            }
+            // Fall through to cloud streaming
+        }
+    }
+
     // Try Gemini first
     if (USE_GEMINI_FALLBACK && isGeminiConfigured()) {
         try {

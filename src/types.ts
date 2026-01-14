@@ -22,6 +22,9 @@ export type TimeOfDay = 'morning' | 'midday' | 'afternoon' | 'evening' | 'night'
 // ============================================
 // LOG ENTRIES - Core tracking
 // ============================================
+// Quick log level type for traffic light quick entry
+export type QuickLogLevel = 'good' | 'struggling' | 'crisis';
+
 export interface LogEntry {
     id: string;
     timestamp: string; // ISO date string
@@ -46,6 +49,9 @@ export interface LogEntry {
     dayOfWeek?: DayOfWeek;
     timeOfDay?: TimeOfDay;
     hourOfDay?: number;
+
+    // Quick log metadata (set when created via QuickLog component)
+    quickLogLevel?: QuickLogLevel;
 }
 
 // ============================================
@@ -486,4 +492,37 @@ export interface RecoveryIndicator {
     recoveryConfidence: 'confirmed' | 'estimated' | 'unknown';
     firstNormalLogId?: string;
     detectedAt?: string;
+}
+
+// ============================================
+// CRISIS REFLECTION - Post-crisis guided reflection
+// ============================================
+export type ReflectionEmotionalState = 'calm' | 'tired' | 'anxious' | 'sad' | 'relieved' | 'frustrated';
+
+export interface CrisisReflection {
+    id: string;
+    crisisId: string;
+    timestamp: string; // When reflection was completed
+
+    // Immediate post-crisis state (Phase 3.5)
+    immediateArousal?: number; // 1-10 post-crisis arousal
+    immediateEnergy?: number; // 1-10 post-crisis energy
+    immediateValence?: number; // 1-10 post-crisis mood
+    currentEmotionalState?: ReflectionEmotionalState;
+    mostHelpfulStrategy?: string; // Single most effective strategy
+
+    // Guided reflection answers (Phase 4)
+    mainTriggerIdentified?: string; // What they think caused it
+    strategiesThatHelped?: string[]; // Which strategies worked
+    strategiesThatDidntHelp?: string[]; // Which strategies didn't work
+    preventionIdeas?: string[]; // Ideas for preventing future crises
+    supportNeeded?: string[]; // What support was needed
+
+    // Caregiver notes
+    caregiverObservations?: string; // Free text for observations
+    environmentFactors?: string; // Environmental context
+
+    // Optional follow-up
+    needsFollowUp?: boolean; // Flag for needing more support
+    followUpNotes?: string;
 }

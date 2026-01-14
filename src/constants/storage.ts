@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
     // Core data
     LOGS: 'kreativium_logs',
     CRISIS_EVENTS: 'kreativium_crisis_events',
+    CRISIS_REFLECTIONS: 'kreativium_crisis_reflections',
     SCHEDULE_ENTRIES: 'kreativium_schedule_entries',
     SCHEDULE_TEMPLATES: 'kreativium_schedule_templates',
     GOALS: 'kreativium_goals',
@@ -15,6 +16,7 @@ export const STORAGE_KEYS = {
     CURRENT_CONTEXT: 'kreativium_current_context',
     CHILD_PROFILE: 'kreativium_child_profile',
     ONBOARDING_COMPLETED: 'kreativium_onboarding_completed',
+    ANALYSIS_SETTINGS: 'kreativium_analysis_settings',
 
     // UI state
     ANALYSIS_FILTERS: 'kreativium_analysis_filters',

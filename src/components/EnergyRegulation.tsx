@@ -128,8 +128,12 @@ export const EnergyRegulation: React.FC = () => {
                                 {currentStatus.energy >= 7 ? t('energyRegulation.levelHigh') : currentStatus.energy >= 4 ? t('energyRegulation.levelModerate') : t('energyRegulation.levelLow')}
                             </p>
                             {currentStatus.trend !== 0 && (
-                                <div className={`flex items-center gap-1 px-2 py-1 rounded-lg ${currentStatus.trend > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                                    <span className="text-sm font-bold">{currentStatus.trend > 0 ? '+' : ''}{currentStatus.trend}% {t('energyRegulation.today')}</span>
+                                <div
+                                    className={`flex flex-col items-end px-2 py-1 rounded-lg ${currentStatus.trend > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}
+                                    title={t('energyRegulation.trendExplanation', 'Change from your first log today')}
+                                >
+                                    <span className="text-sm font-bold">{currentStatus.trend > 0 ? '+' : ''}{currentStatus.trend}%</span>
+                                    <span className="text-[10px] opacity-80">{t('energyRegulation.vsStartOfDay', 'vs start of day')}</span>
                                 </div>
                             )}
                         </div>

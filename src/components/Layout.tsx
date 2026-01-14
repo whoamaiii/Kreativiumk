@@ -4,6 +4,7 @@ import { Navigation } from './Navigation';
 import { motion } from 'framer-motion';
 import { useAppContext } from '../store';
 import { useTranslation } from 'react-i18next';
+import { Home as HomeIcon, GraduationCap } from 'lucide-react';
 
 interface LayoutProps {
     children?: ReactNode;
@@ -19,38 +20,42 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             {/* Content */}
             <main className="relative z-10 w-full max-w-md md:max-w-2xl lg:max-w-6xl mx-auto min-h-screen p-4 pb-32">
-                {/* Context Toggle */}
+                {/* Context Toggle - Enhanced with icons and larger touch targets */}
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex justify-center mb-4"
+                    className="flex justify-center mb-2"
                 >
-                    <div className="bg-white/10 dark:bg-black/20 backdrop-blur-md p-1 rounded-full flex gap-1 border border-white/10 relative">
+                    <div className="bg-white/10 dark:bg-black/20 backdrop-blur-md p-1.5 rounded-full flex gap-1 border border-white/10 relative">
                         <motion.div
-                            className="absolute top-1 bottom-1 rounded-full bg-white dark:bg-slate-700 shadow-sm"
+                            className="absolute top-1.5 bottom-1.5 rounded-full bg-white dark:bg-slate-700 shadow-sm"
                             initial={false}
                             animate={{
-                                left: currentContext === 'home' ? 4 : '50%',
-                                width: currentContext === 'home' ? 'calc(50% - 6px)' : 'calc(50% - 6px)'
+                                left: currentContext === 'home' ? 6 : '50%',
+                                width: currentContext === 'home' ? 'calc(50% - 8px)' : 'calc(50% - 8px)'
                             }}
                             transition={{ type: "spring", stiffness: 500, damping: 30 }}
                         />
                         <button
                             onClick={() => setCurrentContext('home')}
-                            className={`relative z-10 px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${currentContext === 'home'
+                            className={`relative z-10 px-5 py-2.5 rounded-full text-sm font-bold transition-colors flex items-center gap-2 min-h-[44px] ${currentContext === 'home'
                                 ? 'text-slate-900 dark:text-white'
                                 : 'text-slate-500 dark:text-slate-400'
                                 }`}
+                            aria-pressed={currentContext === 'home'}
                         >
+                            <HomeIcon size={16} />
                             {t('layout.home')}
                         </button>
                         <button
                             onClick={() => setCurrentContext('school')}
-                            className={`relative z-10 px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${currentContext === 'school'
+                            className={`relative z-10 px-5 py-2.5 rounded-full text-sm font-bold transition-colors flex items-center gap-2 min-h-[44px] ${currentContext === 'school'
                                 ? 'text-slate-900 dark:text-white'
                                 : 'text-slate-500 dark:text-slate-400'
                                 }`}
+                            aria-pressed={currentContext === 'school'}
                         >
+                            <GraduationCap size={16} />
                             {t('layout.school')}
                         </button>
                     </div>

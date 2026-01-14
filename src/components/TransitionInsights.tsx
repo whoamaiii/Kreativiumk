@@ -168,8 +168,13 @@ export const TransitionInsights: React.FC = () => {
                                 </div>
                             </>
                         ) : (
-                            <div className="text-lg font-medium text-slate-500 truncate">
-                                {t('common.noData')}
+                            <div className="flex flex-col">
+                                <div className="text-sm font-medium text-slate-400 truncate">
+                                    {t('transitions.stats.noSupportsYet', 'No strategies recorded yet')}
+                                </div>
+                                <div className="text-xs text-slate-500 mt-1">
+                                    {t('transitions.stats.addSupportsHint', 'Add them when completing activities')}
+                                </div>
                             </div>
                         )}
                     </motion.div>
@@ -286,8 +291,14 @@ export const TransitionInsights: React.FC = () => {
                                 </div>
                             </div>
                         )) : (
-                            <div className="text-center py-8 text-slate-500">
-                                {t('transitions.emptyState.noStrategies')}
+                            <div className="flex flex-col items-center text-center py-8 px-4 bg-slate-800/30 border border-slate-700/30 rounded-xl">
+                                <HelpCircle size={32} className="text-slate-500 mb-3" />
+                                <p className="text-slate-400 font-medium mb-1">
+                                    {t('transitions.emptyState.noStrategies', 'No support strategies recorded')}
+                                </p>
+                                <p className="text-slate-500 text-sm">
+                                    {t('transitions.emptyState.strategiesHint', 'When completing activities, add strategies used to help with transitions')}
+                                </p>
                             </div>
                         )}
                     </div>

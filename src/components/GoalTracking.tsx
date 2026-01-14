@@ -272,6 +272,7 @@ export const GoalTracking: React.FC = () => {
                             <div>
                                 <p className="text-4xl font-bold tracking-tight text-white drop-shadow-lg">{goals.length > 0 ? overallProgress : 68}%</p>
                                 <p className="text-indigo-200 text-xs font-medium uppercase tracking-wider mt-1">{t('goals.totalCompletion')}</p>
+                                <p className="text-indigo-300/70 text-[10px] mt-0.5">{t('goals.averageAcrossGoals', 'Average across all goals')}</p>
                             </div>
                             <div className="bg-white/20 p-2.5 rounded-xl backdrop-blur-md">
                                 <TrendingUp className="text-white" size={24} />

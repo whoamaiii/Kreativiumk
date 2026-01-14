@@ -33,5 +33,9 @@ finetune/
 *.gguf
 *.zip
 
+# AI Model files (too large for GitHub, download separately)
+*.task
+android/app/src/main/assets/models/*.task
+
 # Sugar autonomous dev system
 .sugar/

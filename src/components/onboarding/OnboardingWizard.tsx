@@ -1,78 +1,129 @@
+/**
+ * OnboardingWizard Component
+ *
+ * A streamlined 3-step onboarding flow for new users:
+ * 1. Welcome - Quick value proposition with explore option
+ * 2. Profile - Child's name (required)
+ * 3. Personalize - Optional triggers/strategies setup
+ * 4. Completion - Celebration and next steps
+ */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StartStep } from './steps/StartStep';
 import { ProfileStep } from './steps/ProfileStep';
-import { TriggersStep } from './steps/TriggersStep';
-import { StrategiesStep } from './steps/StrategiesStep';
+import { PersonalizeStep } from './steps/PersonalizeStep';
+import { CompletionStep } from './steps/CompletionStep';
+import { useSettings } from '../../store';
+
+type OnboardingStep = 'start' | 'profile' | 'personalize' | 'completion';
 
 export const OnboardingWizard: React.FC = () => {
-    const [currentStep, setCurrentStep] = useState(0);
+    const [currentStep, setCurrentStep] = useState<OnboardingStep>('start');
     const navigate = useNavigate();
+    const { completeOnboarding } = useSettings();
 
-    const nextStep = () => setCurrentStep(prev => prev + 1);
+    // Step order for progress calculation
+    const stepOrder: OnboardingStep[] = ['start', 'profile', 'personalize', 'completion'];
+    const currentStepIndex = stepOrder.indexOf(currentStep);
+    const progress = ((currentStepIndex) / (stepOrder.length - 1)) * 100;
+
+    const handleQuickStart = () => {
+        // User chose to explore without setup - complete onboarding
+        completeOnboarding();
+        navigate('/', { replace: true });
+    };
 
     const handleComplete = () => {
-        // Navigate to home after onboarding completion
         navigate('/', { replace: true });
     };
 
     const renderStep = () => {
         switch (currentStep) {
-            case 0: return <StartStep onNext={nextStep} />;
-            case 1: return <ProfileStep onNext={nextStep} />;
-            case 2: return <TriggersStep onNext={nextStep} />;
-            case 3: return <StrategiesStep onComplete={handleComplete} />;
-            default: return null;
+            case 'start':
+                return (
+                    <StartStep
+                        onNext={() => setCurrentStep('profile')}
+                        onQuickStart={handleQuickStart}
+                    />
+                );
+            case 'profile':
+                return (
+                    <ProfileStep
+                        onNext={() => setCurrentStep('personalize')}
+                        onBack={() => setCurrentStep('start')}
+                    />
+                );
+            case 'personalize':
+                return (
+                    <PersonalizeStep
+                        onNext={() => setCurrentStep('completion')}
+                        onSkip={() => setCurrentStep('completion')}
+                        onBack={() => setCurrentStep('profile')}
+                    />
+                );
+            case 'completion':
+                return (
+                    <CompletionStep onComplete={handleComplete} />
+                );
+            default:
+                return null;
         }
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xl">
-            {/* Animated Background */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-b from-gray-900 via-gray-900 to-black overflow-y-auto">
+            {/* Animated Background Orbs */}
             <div className="absolute inset-0 overflow-hidden -z-10">
-                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-900/40 via-purple-900/40 to-slate-900/40" />
                 <motion.div
                     animate={{
                         scale: [1, 1.2, 1],
-                        opacity: [0.3, 0.5, 0.3]
+                        opacity: [0.2, 0.3, 0.2]
                     }}
-                    transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[100px]"
+                    transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute top-1/4 -left-20 w-80 h-80 bg-cyan-500/20 rounded-full blur-[100px]"
                 />
                 <motion.div
                     animate={{
-                        scale: [1, 1.5, 1],
-                        opacity: [0.2, 0.4, 0.2]
+                        scale: [1, 1.3, 1],
+                        opacity: [0.15, 0.25, 0.15]
                     }}
-                    transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-                    className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-rose-500/20 rounded-full blur-[100px]"
+                    transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                    className="absolute bottom-1/4 -right-20 w-96 h-96 bg-purple-500/20 rounded-full blur-[100px]"
                 />
             </div>
 
-            <div className="w-full max-w-2xl px-6 relative z-10">
-                {/* Progress Indicators */}
-                {currentStep > 0 && (
-                    <div className="flex justify-center gap-2 mb-12">
-                        {[1, 2, 3].map((step) => (
-                            <div
-                                key={step}
-                                className={`h-1.5 rounded-full transition-all duration-500 ${step <= currentStep
-                                        ? 'w-12 bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]'
-                                        : 'w-2 bg-white/20'
-                                    }`}
+            <div className="w-full max-w-md px-6 py-8 relative z-10">
+                {/* Progress Bar - Only show after start */}
+                {currentStep !== 'start' && currentStep !== 'completion' && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-8"
+                    >
+                        <div className="flex justify-between text-xs text-white/40 mb-2 px-1">
+                            <span>Profil</span>
+                            <span>Tilpasning</span>
+                        </div>
+                        <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <motion.div
+                                className="h-full bg-gradient-to-r from-cyan-500 to-purple-500"
+                                initial={{ width: 0 }}
+                                animate={{ width: `${progress}%` }}
+                                transition={{ duration: 0.5, ease: "easeOut" }}
                             />
-                        ))}
-                    </div>
+                        </div>
+                    </motion.div>
                 )}
 
+                {/* Step Content */}
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={currentStep}
-                        initial={{ opacity: 0, x: 20 }}
+                        initial={{ opacity: 0, x: 30 }}
                         animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.3 }}
+                        exit={{ opacity: 0, x: -30 }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
                         className="flex flex-col items-center"
                     >
                         {renderStep()}

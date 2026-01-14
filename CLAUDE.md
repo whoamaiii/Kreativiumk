@@ -15,6 +15,32 @@ npm run test:run -- src/path/to/file.test.ts  # Run single test file
 npm run test -- --coverage                     # Run tests with coverage
 ```
 
+### Android Build Commands
+
+```bash
+# Build and sync to Android
+npm run build && npx cap sync android
+
+# Open in Android Studio (for emulator testing or APK generation)
+npx cap open android
+
+# Build debug APK directly (without Android Studio)
+cd android && ./gradlew assembleDebug
+# APK location: android/app/build/outputs/apk/debug/app-debug.apk
+
+# Build release APK (requires signing configuration)
+cd android && ./gradlew assembleRelease
+
+# Build APK with bundled model (offline-first, ~2GB APK)
+# First download model to: android/app/src/main/assets/models/gemma3-4b-it-int4-web.task
+# Then build normally - model auto-extracts on first launch
+```
+
+**Prerequisites for Android builds:**
+- Java JDK 21+ (`brew install openjdk@21` on macOS)
+- Android Studio with Android SDK
+- Accept Android SDK licenses
+
 ### Test Environment
 - Uses `happy-dom` (fast, lightweight DOM implementation)
 - Setup file: `src/test/setup.ts` (mocks localStorage, matchMedia, crypto.randomUUID)
@@ -22,7 +48,7 @@ npm run test -- --coverage                     # Run tests with coverage
 
 ## Architecture Overview
 
-**NeuroLogg Pro** is a PWA for tracking and analyzing emotional/behavioral patterns in neurodivergent children. Built with React 19 + TypeScript + Vite.
+**NeuroLogg Pro** is a PWA and native Android app for tracking and analyzing emotional/behavioral patterns in neurodivergent children. Built with React 19 + TypeScript + Vite, with Capacitor for native Android builds.
 
 ### Entry Points & Routing
 - `src/main.tsx` - React root with PWA service worker registration
@@ -43,21 +69,37 @@ All data persists to `localStorage` with `kreativium_*` key prefix.
 ### AI Integration
 Three-tier AI support in `src/services/`:
 
-**Current (Cloud APIs):**
-- `ai.ts` - OpenRouter API (primary, premium model chain: Grok-4 → GPT-5.1 → Gemini 2.5 Pro)
+**Local Model (Android Native - Primary):**
+- `localModel.ts` - Gemma 3 4B via MediaPipe LLM Inference
+- Runs entirely on-device using Snapdragon NPU (90+ tokens/sec on S25 Ultra)
+- Model size: ~2.6GB (int4 quantized)
+- Context: `src/contexts/ModelContext.tsx` manages download/loading state
+- UI: `ModelDownloadPrompt.tsx` (first-launch), `ModelManager.tsx` (settings)
+- Native plugin: `android/app/src/main/java/.../GemmaPlugin.java`
+
+**Bundled Model Support:**
+- Model can be bundled directly in the APK for offline-first deployment
+- Location: `android/app/src/main/assets/models/gemma3-4b-it-int4-web.task`
+- See `android/app/src/main/assets/models/README.md` for download instructions
+- Auto-extracts on first launch (no download prompt shown)
+- APK size with bundled model: ~2.0GB
+
+**Cloud APIs (Fallback):**
+- `ai.ts` - OpenRouter API (premium model chain: Gemini 2.5 Pro → Claude 3.5 → GPT-4o)
 - `gemini.ts` - Google Gemini API (alternative)
 
-**Future (Local Inference):**
-- `localModel.ts` - WebLLM integration for offline-first AI (currently disabled)
-- Uses `@mlc-ai/web-llm` package (~5.5MB bundle, will be optimized when enabled)
-- Planned: Fine-tuned Gemma model for Norwegian behavioral analysis
-- Context: `src/contexts/ModelContext.tsx` manages model loading state
+**AI Priority Order (on Android):**
+1. Local Gemma 3 4B (bundled in APK or downloaded)
+2. Google Gemini API (if configured)
+3. OpenRouter API (if configured)
+4. Mock data (development fallback)
 
-> **Note:** Local model support is intentionally disabled. The app currently uses OpenRouter.
-> When ready to enable local inference, set `LOCAL_SERVER_CONFIG.enabled = true` in `localModel.ts`
-> or implement the WebLLM flow via the ModelLoader component.
+> **Bundled vs Downloaded:** If model is bundled in APK, it auto-extracts on first launch (~30-60 seconds). If not bundled, user is prompted to download (~2.6GB) or use cloud APIs.
 
-App works without API keys using mock data.
+> **Note:** On web/PWA, only cloud APIs are available. On Android native, local model is preferred when downloaded.
+> All AI features (`analyzeLogs`, `analyzeLogsDeep`, `analyzeLogsStreaming`) use local model first.
+
+App works without API keys using mock data on web, or local model on Android.
 
 ### Privacy-First Architecture (Planned)
 
@@ -81,12 +123,51 @@ App works without API keys using mock data.
    - No user accounts, no cloud sync, no telemetry
    - Parents/caregivers own their data entirely
 
+### Native App (Android)
+
+The app uses **Capacitor** to run as a native Android app. Key differences from PWA:
+
+**Platform Detection** (`src/utils/platform.ts`):
+```typescript
+import { isNative, isAndroid, isWeb } from './utils/platform';
+```
+
+**Platform-Specific Behavior:**
+| Feature | PWA (Web) | Native (Android) |
+|---------|-----------|------------------|
+| Haptic feedback | `navigator.vibrate()` | `@capacitor/haptics` |
+| Audio recording | Full support | **Disabled** (UI hidden) |
+| Data export | Browser download | `@capacitor/filesystem` + `@capacitor/share` |
+| Microphone permission | Checked on mount | Skipped (unavailable) |
+
+**Why Audio Recording is Disabled on Native:**
+- Simplifies implementation (no native audio plugins needed)
+- Crisis mode features remain functional without audio
+- Can be enabled later by adding `@capacitor/microphone` plugin
+
+**Capacitor Plugins Installed:**
+- `@capacitor/core` - Core Capacitor runtime
+- `@capacitor/haptics` - Native vibration feedback
+- `@capacitor/filesystem` - File system access for exports
+- `@capacitor/share` - Native share dialog for exports
+
+**Files Modified for Native Support:**
+- `src/utils/platform.ts` - Platform detection utilities
+- `src/utils/exportData.ts` - Native file export via Filesystem + Share
+- `src/components/QuickLog.tsx` - Capacitor Haptics integration
+- `src/components/CrisisFloatingButton.tsx` - Capacitor Haptics integration
+- `src/components/CrisisMode.tsx` - Audio UI hidden, permission check skipped
+- `src/components/Settings.tsx` - Async export handler
+- `vite.config.ts` - `base: './'` for Capacitor compatibility
+- `capacitor.config.ts` - Capacitor configuration
+
 ### Key Technologies
 - **UI**: Tailwind CSS v4, Framer Motion, Lucide icons
 - **Charts**: Recharts, Three.js with @react-three/fiber (lazy-loaded)
 - **i18n**: i18next (Norwegian primary, English fallback) - translations in `src/locales/`
 - **PDF**: jsPDF + jspdf-autotable
-- **Local AI**: @mlc-ai/web-llm (future, currently bundled but disabled)
+- **Native**: Capacitor with @capacitor/haptics, @capacitor/filesystem, @capacitor/share
+- **Local AI**: MediaPipe LLM Inference with Gemma 3 4B (Android native, fully functional)
 
 ### Design System
 "Liquid Glass" dark theme aesthetic:
@@ -115,11 +196,20 @@ src/
 ├── contexts/       # React contexts (ModelContext for local AI)
 ├── services/       # AI APIs (ai.ts, gemini.ts, localModel.ts) + PDF generation
 ├── utils/          # Data generation, export, predictions, transition analysis
+│   └── platform.ts # Platform detection (isNative, isAndroid, isWeb)
 ├── locales/        # i18n translations (en.json, no.json)
 ├── test/           # Vitest setup and mocks
 ├── store/          # React Context providers (split by domain)
 ├── constants/      # Storage keys and app constants
 └── types.ts        # TypeScript data models with enums/constants
+
+android/            # Capacitor Android project (generated)
+├── app/            # Android app module
+│   ├── src/main/   # Android source and resources
+│   │   ├── assets/models/  # Bundled model (optional, ~2.6GB)
+│   │   └── java/.../GemmaPlugin.java  # MediaPipe LLM native plugin
+│   └── build/outputs/apk/  # Built APK files
+└── gradle/         # Gradle wrapper
 
 docs/
 ├── API.md          # AI service integration
@@ -130,6 +220,8 @@ docs/
 ├── TESTING.md      # Testing guide and patterns
 ├── TYPES.md        # TypeScript type definitions
 └── UTILS.md        # Utility functions reference
+
+capacitor.config.ts # Capacitor configuration (appId, webDir)
 ```
 
 ## Documentation

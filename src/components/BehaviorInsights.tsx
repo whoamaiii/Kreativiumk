@@ -46,8 +46,11 @@ const calculateStrategyEffectiveness = (logs: LogEntry[]) => {
         .slice(0, 5); // Top 5 strategies
 };
 
-// Helper to build heatmap data
-const buildHeatmapData = (logs: LogEntry[]) => {
+// Helper to build heatmap data with sample counts
+const buildHeatmapData = (logs: LogEntry[]): {
+    averages: Record<string, Record<string, number>>;
+    counts: Record<string, Record<string, number>>;
+} => {
     const heatmap: Record<string, Record<string, number[]>> = {
         morning: { monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: [] },
         midday: { monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: [] },
@@ -66,29 +69,33 @@ const buildHeatmapData = (logs: LogEntry[]) => {
         }
     });
 
-    // Calculate averages
-    const result: Record<string, Record<string, number>> = {};
+    // Calculate averages and counts
+    const averages: Record<string, Record<string, number>> = {};
+    const counts: Record<string, Record<string, number>> = {};
     Object.entries(heatmap).forEach(([time, days]) => {
-        result[time] = {};
+        averages[time] = {};
+        counts[time] = {};
         Object.entries(days).forEach(([day, values]) => {
             // Filter out any invalid values as safety net
             const validValues = values.filter(v => Number.isFinite(v));
-            result[time][day] = validValues.length > 0
+            counts[time][day] = validValues.length;
+            averages[time][day] = validValues.length > 0
                 ? Math.round(validValues.reduce((a, b) => a + b, 0) / validValues.length)
                 : 0;
         });
     });
 
-    return result;
+    return { averages, counts };
 };
 
-// Helper to get color class based on arousal level
-const getHeatmapColor = (level: number): string => {
-    if (level === 0) return 'bg-slate-700/30';
-    if (level <= 3) return 'bg-green-500/30';
-    if (level <= 5) return 'bg-yellow-500/40';
-    if (level <= 7) return 'bg-orange-500/60';
-    return 'bg-red-500/70';
+// Helper to get color class based on arousal level and sample count
+// Uses discrete opacity classes since Tailwind doesn't support dynamic opacity values
+const getHeatmapColorClass = (level: number, sampleCount: number = 1): string => {
+    if (level === 0 || sampleCount === 0) return 'bg-slate-700/30';
+    if (level <= 3) return sampleCount >= 3 ? 'bg-green-500/40' : 'bg-green-500/20';
+    if (level <= 5) return sampleCount >= 3 ? 'bg-yellow-500/50' : 'bg-yellow-500/25';
+    if (level <= 7) return sampleCount >= 3 ? 'bg-orange-500/70' : 'bg-orange-500/35';
+    return sampleCount >= 3 ? 'bg-red-500/80' : 'bg-red-500/40';
 };
 
 export const BehaviorInsights: React.FC = () => {
@@ -434,12 +441,12 @@ export const BehaviorInsights: React.FC = () => {
                             </div>
                             <div className="flex flex-1 flex-col py-3">
                                 <p className="text-white text-base font-medium leading-normal">
-                                    {latestCrisis.sensoryTriggers[0] ? translateTrigger(latestCrisis.sensoryTriggers[0]) :
-                                     latestCrisis.contextTriggers[0] ? translateTrigger(latestCrisis.contextTriggers[0]) :
+                                    {latestCrisis.sensoryTriggers?.[0] ? translateTrigger(latestCrisis.sensoryTriggers[0]) :
+                                     latestCrisis.contextTriggers?.[0] ? translateTrigger(latestCrisis.contextTriggers[0]) :
                                      t('behaviorInsights.meltdownAnatomy.unknownTrigger')}
                                 </p>
                                 <p className="text-slate-400 text-sm font-normal leading-normal">
-                                    {t('behaviorInsights.meltdownAnatomy.warning')}: {latestCrisis.warningSignsObserved[0] ? translateWarningSign(latestCrisis.warningSignsObserved[0]) : t('behaviorInsights.meltdownAnatomy.notObserved')}
+                                    {t('behaviorInsights.meltdownAnatomy.warning')}: {latestCrisis.warningSignsObserved?.[0] ? translateWarningSign(latestCrisis.warningSignsObserved[0]) : t('behaviorInsights.meltdownAnatomy.notObserved')}
                                 </p>
                             </div>
 
@@ -459,7 +466,11 @@ export const BehaviorInsights: React.FC = () => {
                                                 latestCrisis.type === 'sensory_overload' ? t('behaviorInsights.meltdownAnatomy.sensoryOverload') : t('behaviorInsights.meltdownAnatomy.crisis')}
                                 </p>
                                 <p className="text-slate-400 text-sm font-normal leading-normal">
-                                    {t('behaviorInsights.meltdownAnatomy.intensity')}: {latestCrisis.peakIntensity}/10 | {t('behaviorInsights.meltdownAnatomy.duration')}: {Math.round(latestCrisis.durationSeconds / 60)} min
+                                    {t('behaviorInsights.meltdownAnatomy.intensity')}: {latestCrisis.peakIntensity}/10 | {t('behaviorInsights.meltdownAnatomy.duration')}: {
+                                        latestCrisis.durationSeconds < 60
+                                            ? `${latestCrisis.durationSeconds} ${t('common.seconds', 'sec')}`
+                                            : `${Math.round(latestCrisis.durationSeconds / 60)} min`
+                                    }
                                 </p>
                             </div>
 
@@ -472,10 +483,14 @@ export const BehaviorInsights: React.FC = () => {
                             </div>
                             <div className="flex flex-1 flex-col py-3">
                                 <p className="text-white text-base font-medium leading-normal">
-                                    {latestCrisis.strategiesUsed[0] ? translateStrategy(latestCrisis.strategiesUsed[0]) : t('behaviorInsights.meltdownAnatomy.recovered')}
+                                    {latestCrisis.strategiesUsed?.[0] ? translateStrategy(latestCrisis.strategiesUsed[0]) : t('behaviorInsights.meltdownAnatomy.recovered')}
                                 </p>
                                 <p className="text-slate-400 text-sm font-normal leading-normal">
-                                    {t('behaviorInsights.meltdownAnatomy.recoveryTime')}: {latestCrisis.recoveryTimeMinutes || '?'} min
+                                    {t('behaviorInsights.meltdownAnatomy.recoveryTime')}: {
+                                        latestCrisis.recoveryTimeMinutes
+                                            ? `${latestCrisis.recoveryTimeMinutes} min`
+                                            : t('common.unknown', 'Unknown')
+                                    }
                                 </p>
                             </div>
                         </div>
@@ -499,28 +514,31 @@ export const BehaviorInsights: React.FC = () => {
                     <p className="text-slate-400 text-base font-normal leading-normal pt-1">{t('behaviorInsights.heatmap.subtitle')}</p>
 
                     {/* Legend - placed before grid for better understanding */}
-                    <div className="flex items-center justify-center gap-4 mt-4 mb-2 text-xs text-slate-400" role="legend" aria-label={t('behaviorInsights.heatmap.title')}>
+                    <div className="flex flex-wrap items-center justify-center gap-3 mt-4 mb-2 text-xs text-slate-400" role="legend" aria-label={t('behaviorInsights.heatmap.title')}>
                         <div className="flex items-center gap-1">
                             <div className="w-3 h-3 rounded bg-slate-700/30" aria-hidden="true" />
                             <span>{t('behaviorInsights.heatmap.legend.noData')}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 rounded bg-green-500/30" aria-hidden="true" />
+                            <div className="w-3 h-3 rounded bg-green-500/40" aria-hidden="true" />
                             <span>{t('behaviorInsights.heatmap.legend.low')}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 rounded bg-yellow-500/40" aria-hidden="true" />
+                            <div className="w-3 h-3 rounded bg-yellow-500/50" aria-hidden="true" />
                             <span>{t('behaviorInsights.heatmap.legend.medium')}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 rounded bg-orange-500/60" aria-hidden="true" />
+                            <div className="w-3 h-3 rounded bg-orange-500/70" aria-hidden="true" />
                             <span>{t('behaviorInsights.heatmap.legend.high')}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 rounded bg-red-500/70" aria-hidden="true" />
+                            <div className="w-3 h-3 rounded bg-red-500/80" aria-hidden="true" />
                             <span>{t('behaviorInsights.heatmap.legend.critical')}</span>
                         </div>
                     </div>
+                    <p className="text-center text-xs text-slate-500 mb-2">
+                        {t('behaviorInsights.heatmap.confidenceNote', 'Svakere farger = færre datapunkter. Hold over for antall.')}
+                    </p>
 
                     <div className="mt-4" role="grid" aria-label={t('behaviorInsights.heatmap.title')}>
                         {/* Day headers */}
@@ -538,18 +556,26 @@ export const BehaviorInsights: React.FC = () => {
                                     {getTimeLabel(time)}
                                 </div>
                                 {dayKeys.map((day, dayIdx) => {
-                                    const level = heatmapData[time]?.[day] || 0;
+                                    const level = heatmapData.averages[time]?.[day] || 0;
+                                    const count = heatmapData.counts[time]?.[day] || 0;
                                     const dayLabel = dayLabels[dayIdx];
                                     const timeLabel = getTimeLabel(time);
                                     return (
                                         <div
                                             key={`${time}-${day}`}
-                                            className={`aspect-square rounded ${getHeatmapColor(level)} animate-[heatmapFadeIn_0.3s_ease-out_forwards]`}
+                                            className={`aspect-square rounded ${getHeatmapColorClass(level, count)} animate-[heatmapFadeIn_0.3s_ease-out_forwards] relative group`}
                                             style={{ animationDelay: `${0.3 + timeIdx * 0.05}s`, opacity: 0 }}
                                             role="gridcell"
                                             aria-label={t('behaviorInsights.heatmap.cellLabel', { day: dayLabel, time: timeLabel, level })}
-                                            title={`${dayLabel} ${timeLabel}: ${level}`}
-                                        />
+                                            title={`${dayLabel} ${timeLabel}: ${level} (n=${count})`}
+                                        >
+                                            {/* Sample count indicator on hover */}
+                                            {count > 0 && (
+                                                <span className="absolute inset-0 flex items-center justify-center text-[8px] text-white/0 group-hover:text-white/70 transition-colors font-medium">
+                                                    {count}
+                                                </span>
+                                            )}
+                                        </div>
                                     );
                                 })}
                             </div>
@@ -743,12 +769,20 @@ export const BehaviorInsights: React.FC = () => {
                                                 <p className="text-white font-medium text-sm leading-relaxed">
                                                     {pattern.description}
                                                 </p>
-                                                <div className="flex items-center gap-2 mt-2">
+                                                <div className="flex items-center gap-2 mt-2 flex-wrap">
                                                     <span className={`text-xs px-2 py-0.5 rounded-full ring-1 ${confidenceColors[pattern.confidence]}`}>
                                                         {t(`behaviorInsights.multiFactorPatterns.confidence.${pattern.confidence}`, pattern.confidence)}
                                                     </span>
                                                     <span className="text-xs text-slate-500">
-                                                        {Math.round(pattern.probability * 100)}% {t('behaviorInsights.multiFactorPatterns.probability', 'sannsynlighet')}
+                                                        {Math.round(pattern.probability * 100)}%
+                                                        {pattern.probabilityCI && (
+                                                            <span className="text-slate-600 ml-1">
+                                                                ({Math.round(pattern.probabilityCI.lower * 100)}-{Math.round(pattern.probabilityCI.upper * 100)}%)
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                    <span className="text-xs text-slate-600" title={t('behaviorInsights.multiFactorPatterns.sampleSizeTooltip', 'Antall observasjoner dette mønsteret er basert på')}>
+                                                        n={pattern.sampleSize || pattern.totalOccasions}
                                                     </span>
                                                 </div>
                                             </div>
@@ -775,7 +809,14 @@ export const BehaviorInsights: React.FC = () => {
                                                             </div>
                                                             <div className="bg-white/5 rounded-lg p-2">
                                                                 <span className="text-slate-400">{t('behaviorInsights.multiFactorPatterns.pValue', 'p-verdi')}</span>
-                                                                <p className="text-white font-medium">{pattern.pValue.toFixed(4)}</p>
+                                                                <p className="text-white font-medium">
+                                                                    {pattern.pValue.toFixed(4)}
+                                                                    {pattern.adjustedPValue !== undefined && (
+                                                                        <span className="text-slate-500 ml-1" title={t('behaviorInsights.multiFactorPatterns.adjustedPValueTooltip', 'Justert for multiple sammenligninger (FDR)')}>
+                                                                            (adj: {pattern.adjustedPValue.toFixed(4)})
+                                                                        </span>
+                                                                    )}
+                                                                </p>
                                                             </div>
                                                         </div>
                                                         <div className="mt-3">

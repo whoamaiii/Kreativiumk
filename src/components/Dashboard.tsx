@@ -5,7 +5,8 @@ import { ArousalChart } from './ArousalChart';
 import { Plus, Calendar, Battery, BrainCircuit, Sparkles, Loader2, RefreshCw, AlertCircle, Zap, SearchX } from 'lucide-react';
 import { EmptyState } from './EmptyState';
 import { format } from 'date-fns';
-import { nb } from 'date-fns/locale';
+import { nb, enUS } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { analyzeLogs, analyzeLogsDeep, analyzeLogsStreaming } from '../services/ai';
 import type { AnalysisResult } from '../types';
@@ -23,6 +24,10 @@ export const Dashboard: React.FC = () => {
     const { childProfile } = useChildProfile();
     const { showError, showSuccess } = useToast();
     const prefersReducedMotion = useReducedMotion();
+    const { i18n } = useTranslation();
+
+    // Locale-aware date formatting
+    const dateLocale = i18n.language === 'no' ? nb : enUS;
 
     // AI Analysis state
     const [analysis, setAnalysis] = useState<DeepAnalysisResult | null>(null);
@@ -235,7 +240,7 @@ export const Dashboard: React.FC = () => {
     // Skeleton loading state
     if (isInitialMount && !prefersReducedMotion) {
         return (
-            <div className="flex flex-col gap-6 pb-24 animate-in fade-in duration-100">
+            <div className="flex flex-col gap-6 pb-28 animate-in fade-in duration-100">
                 {/* Header skeleton */}
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
@@ -282,7 +287,7 @@ export const Dashboard: React.FC = () => {
     }
 
     return (
-        <div className="flex flex-col gap-6 pb-24">
+        <div className="flex flex-col gap-6 pb-28">
             {/* Header */}
             <motion.div
                 initial={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
@@ -303,7 +308,7 @@ export const Dashboard: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-white/5 px-3 py-1.5 rounded-full border border-slate-200 dark:border-white/10 backdrop-blur-sm">
                     <Calendar size={16} />
-                    <span className="text-sm font-medium capitalize">{format(new Date(), 'MMM d', { locale: nb })}</span>
+                    <span className="text-sm font-medium capitalize">{format(new Date(), 'MMM d', { locale: dateLocale })}</span>
                 </div>
             </motion.div>
 
@@ -421,7 +426,7 @@ export const Dashboard: React.FC = () => {
                                 <p className="text-slate-500 dark:text-slate-400 text-xs">
                                     {analysis?.isDeepAnalysis
                                         ? getModelDisplayName(analysis.modelUsed, 'Premium')
-                                        : 'Gemini Flash (billig)'}
+                                        : 'Kreativium-flash7B'}
                                 </p>
                             </div>
                         </div>
@@ -449,7 +454,7 @@ export const Dashboard: React.FC = () => {
                                 </pre>
                             </div>
                             <p className="text-slate-500 text-xs mt-2 text-center">
-                                Gemini 3 Pro streaming respons
+                                Kreativium-flash7B streaming respons
                             </p>
                         </div>
                     ) : (isAnalyzing || isDeepAnalyzing) ? (
@@ -463,7 +468,7 @@ export const Dashboard: React.FC = () => {
                                     ? `Forsøk ${retryInfo.attempt} av ${retryInfo.maxRetries}...`
                                     : isDeepAnalyzing
                                         ? 'Dette kan ta opptil 30 sekunder'
-                                        : 'Bruker gratis modell'
+                                        : 'Kreativium-flash7B'
                                 }
                             </p>
                             {elapsedSeconds > 0 && (
@@ -563,7 +568,7 @@ export const Dashboard: React.FC = () => {
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                                 <Sparkles size={16} className="animate-pulse" />
                                 Live Streaming Analyse
-                                <span className="text-xs opacity-75">(Gemini 3)</span>
+                                <span className="text-xs opacity-75">(Kreativium-flash7B)</span>
                             </button>
                         </div>
                     )}

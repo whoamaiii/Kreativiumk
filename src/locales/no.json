@@ -9,7 +9,14 @@
         "goBack": "Gå tilbake",
         "storageError": "Lagringsfeil",
         "storageQuotaExceeded": "Enhetslagringen er full. Noen data kan ikke lagres.",
-        "storageSaveError": "Kunne ikke lagre data. Vennligst prøv igjen."
+        "storageSaveError": "Kunne ikke lagre data. Vennligst prøv igjen.",
+        "cancelling": "Avbryter...",
+        "cancel": "Avbryt",
+        "delete": "Slett",
+        "deleting": "Sletter...",
+        "refresh": "Oppdater",
+        "seconds": "sek",
+        "unknown": "Ukjent"
     },
     "chart": {
         "noDataForPeriod": "Ingen data tilgjengelig for denne perioden"
@@ -25,17 +32,39 @@
     "accessibility": {
         "skipToMain": "Hopp til hovedinnhold"
     },
+    "onboarding": {
+        "appName": "NeuroLogg Pro",
+        "tagline": "Forstå og støtt barnets regulering",
+        "features": {
+            "quickLogging": "Rask daglig logging med ett trykk",
+            "patterns": "Se mønstre og forutsi vanskelige situasjoner",
+            "privacy": "Privat - all data lagres lokalt på din enhet"
+        },
+        "startSetup": "Start oppsett",
+        "setupTime": "Tar under 2 minutter",
+        "exploreFirst": "Utforsk appen først",
+        "profile": {
+            "title": "Hvem er dette for?",
+            "subtitle": "Vi personaliserer appen for barnet",
+            "nameLabel": "Barnets navn eller kallenavn",
+            "namePlaceholder": "f.eks. Alex, Lille Snansen, osv.",
+            "nameRequired": "Vennligst skriv inn et navn for å fortsette",
+            "hint": "Du kan endre dette i innstillinger senere",
+            "next": "Neste",
+            "back": "Tilbake"
+        }
+    },
     "home": {
         "title": "KREATIVIUM",
-        "subtitle": "Mestre din energi. Spor ditt sinn.",
+        "subtitle": "",
         "crisisMode": {
             "title": "Krisemodus",
-            "subtitle": "Trykk for å starte tidtaker",
-            "ariaLabel": "Krisemodus - Start krisetidtaker"
+            "subtitle": "Start pusteøvelse",
+            "ariaLabel": "Krisemodus - Start puste- og jordingstimer"
         },
         "newLog": {
-            "title": "Ny Logg",
-            "subtitle": "Registrer din nåværende tilstand"
+            "title": "Hvordan har du det?",
+            "subtitle": "Rask sjekk"
         },
         "dashboard": {
             "title": "Oversikt",
@@ -48,6 +77,10 @@
         "behavior": {
             "title": "Atferd",
             "subtitle": "Nedsmeltingsanatomi"
+        },
+        "sensory": {
+            "title": "Sensorisk",
+            "subtitle": "Sensorisk profil"
         },
         "senses": {
             "title": "Sanser",
@@ -85,11 +118,20 @@
             "title": "Utviklerverktøy",
             "loadData": "Last testdata (2 uker)",
             "loaded": "Lastet!",
-            "clearData": "Slett alle testdata"
+            "clearData": "Slett alle testdata",
+            "hide": "Skjul utviklerverktøy",
+            "hideHint": "Skjul utviklerverktøy (klikk Vis Utviklerverktøy for å gjenopprette)",
+            "show": "Vis Utviklerverktøy"
         },
         "switchLanguage": "Bytt språk",
         "mockDataLoaded": "Testdata lastet",
-        "mockDataCleared": "Testdata slettet"
+        "mockDataCleared": "Testdata slettet",
+        "sections": {
+            "insights": "Innsikt",
+            "tracking": "Sporingsverktøy",
+            "planning": "Planlegging",
+            "more": "Mer"
+        }
     },
     "energyRegulation": {
         "title": "Energi & Regulering",
@@ -103,6 +145,8 @@
         "levelModerate": "Moderat",
         "levelLow": "Lav",
         "today": "i dag",
+        "vsStartOfDay": "siden morgenen",
+        "trendExplanation": "Endring fra din første logg i dag",
         "noDataToday": "Ingen energidata for i dag",
         "insights": "Energi Innsikt",
         "insightWithData": "Basert på loggene dine varierer energien. Vurder å planlegge 'Stilletid' når du ser fall under nivå 4.",
@@ -119,7 +163,9 @@
             "avgDifficulty": "Snitt Vanskelighet",
             "totalLogged": "Totalt Logget",
             "mostEffective": "Mest Effektive Støtte",
-            "givesAvgDifficulty": "Gir snitt vanskelighet på"
+            "givesAvgDifficulty": "Gir snitt vanskelighet på",
+            "noSupportsYet": "Ingen strategier registrert ennå",
+            "addSupportsHint": "Legg til ved fullføring av aktiviteter"
         },
         "charts": {
             "hardest": "Mest Krevende Overganger",
@@ -134,7 +180,8 @@
             "noData": "Ingen overgangsdata ennå",
             "howToStart": "Fullfør aktiviteter og vurder vanskelighetsgrad for å se innsikt.",
             "goToSchedule": "Gå til Dagsplan",
-            "noStrategies": "Ingen data om effektive tiltak ennå. Prøv å logge støtte ved overganger.",
+            "noStrategies": "Ingen støttestrategier registrert",
+            "strategiesHint": "Ved fullføring av aktiviteter, legg til strategier som hjalp med overgangen",
             "noChartData": "Ikke nok data til å vise graf"
         }
     },
@@ -235,6 +282,21 @@
             "events": "Hendelser",
             "goals": "Mål"
         },
+        "analysis": {
+            "title": "Analyse-innstillinger",
+            "recencyDecay": {
+                "label": "Dataforfall (halveringstid)",
+                "days": "dager",
+                "fast": "Rask (3d)",
+                "slow": "Langsom (21d)",
+                "description": "Hvor raskt gammel data mister betydning i prediksjoner. Lavere verdi = nyere data teller mer.",
+                "hint": {
+                    "fast": "⚡ Rask tilpasning: Bra for barn med hyppig endring i mønstre",
+                    "slow": "🐢 Langsom tilpasning: Bra for barn med stabile mønstre over tid",
+                    "balanced": "⚖️ Balansert: God for de fleste barn"
+                }
+            }
+        },
         "save": {
             "button": "Lagre profil",
             "saved": "Lagret!"
@@ -258,12 +320,12 @@
     },
     "risk": {
         "title": {
-            "today": "Dagens Prognose"
+            "today": "Kriserisiko"
         },
         "level": {
-            "low": "Lav Risiko",
-            "moderate": "Moderat Risiko",
-            "high": "Høy Risiko"
+            "low": "Lav",
+            "moderate": "Moderat",
+            "high": "Høy"
         },
         "obs": "Obs: {{time}}",
         "factors": {
@@ -335,6 +397,7 @@
         "stopRecording": "Stopp Opptak",
         "startRecording": "Ta Opp Lydnotat",
         "recordingActive": "Opptak aktivt. Trykk Stopp når hendelsen er over.",
+        "audioRecordingTime": "opptak",
         "eventEnded": "Hendelse Avsluttet",
         "documentEvent": "Dokumenter Hendelsen",
         "audioSaved": "Lydopptak lagret",
@@ -377,6 +440,75 @@
             "customTime": "Angi minutter...",
             "markRecovered": "Gjenopprettet nå",
             "skip": "Hopp over (logg senere)"
+        },
+        "reflection": {
+            "saved": "Krise registrert",
+            "subtitle": "Ta et øyeblikk til å reflektere",
+            "title": "Refleksjon",
+            "skip": "Hopp over",
+            "complete": "Fullfør",
+            "next": "Neste",
+            "back": "Tilbake",
+            "step": "Steg {{current}} av {{total}}",
+            "steps": {
+                "state": {
+                    "title": "Nåværende tilstand",
+                    "description": "Hvordan føler barnet seg nå?"
+                },
+                "strategies": {
+                    "title": "Strategier",
+                    "description": "Hva fungerte og hva fungerte ikke?"
+                },
+                "trigger": {
+                    "title": "Utløser",
+                    "description": "Hva tror du var hovedårsaken?"
+                },
+                "notes": {
+                    "title": "Notater",
+                    "description": "Ytterligere observasjoner"
+                }
+            },
+            "arousal": {
+                "label": "Spenningsnivå",
+                "low": "Rolig",
+                "mid": "Moderat",
+                "high": "Anspent"
+            },
+            "energy": {
+                "label": "Energinivå",
+                "low": "Utslitt",
+                "mid": "OK",
+                "high": "Energisk"
+            },
+            "valence": {
+                "label": "Humør",
+                "low": "Dårlig",
+                "mid": "Nøytral",
+                "high": "God"
+            },
+            "emotionalState": "Emosjonell tilstand",
+            "emotionalStates": {
+                "calm": "Rolig",
+                "tired": "Sliten",
+                "anxious": "Engstelig",
+                "sad": "Trist",
+                "relieved": "Lettet",
+                "frustrated": "Frustrert"
+            },
+            "strategiesHelped": "Strategier som hjalp",
+            "strategiesDidntHelp": "Strategier som ikke fungerte",
+            "mostHelpful": "Hvilken hjalp mest?",
+            "supportNeeded": "Hva trengte de?",
+            "mainTrigger": "Hva tror du var hovedutløseren?",
+            "preventionIdeas": "Ideer for å forebygge",
+            "preventionPlaceholder": "Skriv inn idé og trykk Enter...",
+            "caregiverNotes": "Dine observasjoner",
+            "caregiverPlaceholder": "Hva la du merke til? Hva fungerte? Hva ville du gjort annerledes?",
+            "environmentNotes": "Miljøfaktorer",
+            "environmentPlaceholder": "F.eks. støy, lys, temperatur, antall mennesker...",
+            "needsFollowUp": "Trenger oppfølging?",
+            "followUpNotes": "Oppfølgingsnotater",
+            "followUpPlaceholder": "Hva bør følges opp?"
         }
     },
     "reports": {
@@ -477,6 +609,7 @@
         "sampleSummary": "Eksempelmål vises nedenfor. Legg til dine egne for å starte!",
         "sample": "Eksempel",
         "totalCompletion": "Samlet Fullføring",
+        "averageAcrossGoals": "Gjennomsnitt på tvers av alle mål",
         "activeGoals": "Aktive Mål",
         "progress": "Fremgang",
         "current": "Nå:",
@@ -551,8 +684,16 @@
     },
     "navigation": {
         "home": "Hjem",
-        "dashboard": "Oversikt",
-        "analysis": "Analyse"
+        "stats": "Statistikk",
+        "log": "Logg",
+        "trends": "Trender",
+        "settings": "Innstillinger"
+    },
+    "simpleInsights": {
+        "empty": {
+            "message": "Logg din første observasjon for å se innsikter",
+            "cta": "Legg til observasjon"
+        }
     },
     "behaviorInsights": {
         "title": "Atferdsinnsikt",
@@ -751,7 +892,25 @@
         "vulnerableTimes": "Sårbare Tidspunkt",
         "insights": "Innsikt",
         "mainFinding": "Hovedfunn",
-        "tip": "Tips"
+        "tip": "Tips",
+        "days": {
+            "monday": { "short": "Man", "full": "Mandag" },
+            "tuesday": { "short": "Tir", "full": "Tirsdag" },
+            "wednesday": { "short": "Ons", "full": "Onsdag" },
+            "thursday": { "short": "Tor", "full": "Torsdag" },
+            "friday": { "short": "Fre", "full": "Fredag" },
+            "saturday": { "short": "Lør", "full": "Lørdag" },
+            "sunday": { "short": "Søn", "full": "Søndag" }
+        },
+        "legend": {
+            "title": "Arousal-nivå",
+            "low": "Lav (1-3)",
+            "high": "Høy (8-10)"
+        },
+        "avgArousalLabel": "snitt arousal",
+        "highestArousalAt": "Høyest arousal observeres på {{day}} kl. {{time}} med snitt {{avg}}.",
+        "tipContent": "Vurder forebyggende tiltak rundt disse tidspunktene - ekstra støtte, reduserte krav, eller planlagte pauser.",
+        "logMoreForPatterns": "Logg flere hendelser for å se mønstre over tid. Kartet viser når arousal er høyest."
     },
     "domain": {
         "sensory": {
@@ -898,5 +1057,42 @@
         "timedOut": "Gikk over av seg selv",
         "interrupted": "Avbrutt",
         "other": "Annet"
+    },
+    "model": {
+        "downloadPromptTitle": "Lokal AI-analyse",
+        "downloadPromptSubtitle": "Kjør analyse uten internett",
+        "benefitOffline": "Fungerer helt offline",
+        "benefitPrivacy": "Data forlater aldri enheten",
+        "benefitSize": "Krever {{size}} lagringsplass",
+        "downloading": "Laster ned...",
+        "downloadTip": "Sørg for stabil WiFi-tilkobling",
+        "downloadProgress": "Nedlastingsfremdrift",
+        "errorGatedModel": "Denne modellen krever en Hugging Face-token. Klikk \"Trenger token?\" for instruksjoner.",
+        "tokenRequired": "Hugging Face Token Kreves",
+        "tokenInstructions": "Gemma 3 4B er en begrenset modell. Følg disse trinnene for tilgang:",
+        "tokenStep3": "Lim inn tokenet ditt nedenfor",
+        "tokenInputLabel": "Hugging Face-token",
+        "acceptLicense": "Godta Gemma-lisensen",
+        "createToken": "Opprett en token med \"read\"-tilgang",
+        "downloadingButton": "Laster ned...",
+        "downloadButton": "Last ned AI-modell",
+        "skipButton": "Bruk sky-API (krever internett)",
+        "needToken": "Trenger token?",
+        "settingsHint": "Du kan laste ned modellen senere fra Innstillinger",
+        "settingsTitle": "Lokal AI-modell",
+        "modelName": "Gemma 3 4B",
+        "statusDownloaded": "Lastet ned",
+        "statusExtracting": "Pakker ut...",
+        "statusNotDownloaded": "Ikke lastet ned",
+        "storageRequired": "Lagringsplass",
+        "downloadingProgress": "Laster ned... {{percent}}%",
+        "deleteConfirm": "Er du sikker på at du vil slette modellen? Du må laste den ned på nytt for å bruke lokal analyse.",
+        "deleteButton": "Slett modell",
+        "descriptionDownloaded": "Analyse kjøres lokalt på enheten. Data sendes aldri til eksterne servere.",
+        "descriptionNotDownloaded": "Last ned Gemma 3 for å kjøre analyse uten internett. Krever WiFi for nedlasting.",
+        "etaRemaining": "~{{time}} igjen",
+        "extractingModel": "Pakker ut modell...",
+        "extractionProgress": "Utpakkingsfremdrift",
+        "extractingProgress": "Pakker ut... {{percent}}%"
     }
 }

@@ -246,3 +246,48 @@ export const DEFAULT_CONTEXT_COMPARISON_CONFIG: ContextComparisonConfig = {
   significantDifferenceThreshold: 20,
   minSampleForStatisticalTest: 10,
 };
+
+// ============================================================================
+// User Settings Integration
+// ============================================================================
+
+/**
+ * Storage key for user analysis settings (matches STORAGE_KEYS.ANALYSIS_SETTINGS)
+ */
+const ANALYSIS_SETTINGS_KEY = 'kreativium_analysis_settings';
+
+/**
+ * Get user's analysis settings from localStorage.
+ * Falls back to defaults if not set or invalid.
+ */
+export function getUserAnalysisSettings(): { recencyDecayHalfLife: number } {
+  try {
+    const stored = localStorage.getItem(ANALYSIS_SETTINGS_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return {
+        recencyDecayHalfLife: typeof parsed.recencyDecayHalfLife === 'number'
+          ? Math.max(3, Math.min(21, parsed.recencyDecayHalfLife))
+          : 7,
+      };
+    }
+  } catch {
+    // Invalid JSON or localStorage error
+  }
+  return { recencyDecayHalfLife: 7 };
+}
+
+/**
+ * Get risk prediction config with user overrides applied.
+ * Reads user settings from localStorage and merges with defaults.
+ */
+export function getRiskConfigWithUserSettings(
+  overrides: Partial<RiskPredictionConfig> = {}
+): RiskPredictionConfig {
+  const userSettings = getUserAnalysisSettings();
+  return {
+    ...DEFAULT_RISK_CONFIG,
+    recencyDecayHalfLife: userSettings.recencyDecayHalfLife,
+    ...overrides,
+  };
+}

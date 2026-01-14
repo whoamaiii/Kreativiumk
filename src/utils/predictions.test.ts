@@ -95,19 +95,21 @@ describe('calculateRiskForecast - Enhanced Features', () => {
         const logs: LogEntry[] = [];
 
         // Old high arousal logs (should have less weight due to decay)
+        // Use 21 days ago to ensure we stay within the 30-day window after day-of-week adjustment
         for (let i = 0; i < 5; i++) {
-            const date = new Date(now.getTime() - (25 * 24 * 60 * 60 * 1000)); // 25 days ago
+            const date = new Date(now.getTime() - (21 * 24 * 60 * 60 * 1000)); // 21 days ago
             // Same day of week
             while (date.getDay() !== now.getDay()) {
                 date.setDate(date.getDate() - 1);
             }
-            date.setHours(date.getHours() + i);
+            date.setHours(8 + i);
             logs.push(createMockLog(9, date));
         }
 
         // Recent low arousal logs (should have more weight)
-        for (let i = 0; i < 5; i++) {
-            const date = new Date(now.getTime() - (7 * Math.floor(i / 2) * 24 * 60 * 60 * 1000)); // Recent weeks
+        // Create 7 logs to ensure we have 12 total same-day logs (above minSamplesForPrediction=10)
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(now.getTime() - (7 * Math.floor(i / 3) * 24 * 60 * 60 * 1000)); // Very recent
             while (date.getDay() !== now.getDay()) {
                 date.setDate(date.getDate() - 1);
             }

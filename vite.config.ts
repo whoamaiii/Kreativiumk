@@ -5,6 +5,8 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Use relative paths for Capacitor compatibility
+  base: './',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -17,7 +19,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['vite.svg', 'icon.svg'],
+      includeAssets: ['vite.svg', 'logo.png'],
       workbox: {
         // Increase cache limit for WebLLM bundle (~6MB)
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
@@ -51,19 +53,19 @@ export default defineConfig({
         orientation: 'portrait',
         icons: [
           {
-            src: 'icon.svg',
+            src: 'logo.png',
             sizes: '192x192',
-            type: 'image/svg+xml'
+            type: 'image/png'
           },
           {
-            src: 'icon.svg',
+            src: 'logo.png',
             sizes: '512x512',
-            type: 'image/svg+xml'
+            type: 'image/png'
           },
           {
-            src: 'icon.svg',
+            src: 'logo.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any maskable'
           }
         ]

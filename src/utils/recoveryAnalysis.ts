@@ -34,8 +34,7 @@ import { mannKendallTest, bootstrapMeanCI } from './statisticalUtils';
  * Calculate personalized recovery thresholds based on child's baseline
  */
 export function calculatePersonalizedRecoveryThresholds(
-    logs: LogEntry[],
-    _config: Partial<RecoveryAnalysisConfig> = {}
+    logs: LogEntry[]
 ): { arousalThreshold: number; energyThreshold: number } | null {
     if (logs.length < 20) {
         return null;
@@ -560,7 +559,7 @@ export function analyzeRecoveryPatterns(
 
     // Calculate personalized thresholds if enabled
     const personalizedThresholds = cfg.usePersonalizedRecoveryThresholds
-        ? calculatePersonalizedRecoveryThresholds(logs, config)
+        ? calculatePersonalizedRecoveryThresholds(logs)
         : undefined;
 
     // Collect all recovery times

@@ -5,6 +5,10 @@
  * Used for backwards compatibility when migrating stored data.
  */
 
+// Type for i18next translation function - uses generic to accept TFunction from i18next
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- i18next TFunction has complex overloads
+type TranslationFunction = (...args: any[]) => any;
+
 // ============================================
 // SENSORY TRIGGERS
 // ============================================
@@ -177,3 +181,103 @@ export const KEY_TO_LEGACY_STRATEGY: Record<StrategyKey, string> = Object.fromEn
 export const KEY_TO_LEGACY_WARNING: Record<WarningSignKey, string> = Object.fromEntries(
     Object.entries(LEGACY_WARNING_SIGN_MAP).map(([k, v]) => [v, k])
 ) as Record<WarningSignKey, string>;
+
+// ============================================
+// LABEL GETTERS (for display purposes)
+// ============================================
+
+/**
+ * Get display label for a sensory trigger key
+ * Optionally uses i18n translation function if provided
+ */
+export function getSensoryTriggerLabel(key: string, t?: TranslationFunction): string {
+    // Try i18n key if translation function provided
+    if (t && typeof t === 'function') {
+        const i18nKey = `sensoryTriggers.${key}`;
+        const translated = t(i18nKey, '');
+        if (translated && translated !== i18nKey) {
+            return translated;
+        }
+    }
+
+    if (key in KEY_TO_LEGACY_SENSORY) {
+        return KEY_TO_LEGACY_SENSORY[key as SensoryTriggerKey];
+    }
+    // Already a Norwegian legacy value
+    if (key in LEGACY_SENSORY_TRIGGER_MAP) {
+        return key;
+    }
+    return key;
+}
+
+/**
+ * Get display label for a context trigger key
+ * Optionally uses i18n translation function if provided
+ */
+export function getContextTriggerLabel(key: string, t?: TranslationFunction): string {
+    // Try i18n key if translation function provided
+    if (t && typeof t === 'function') {
+        const i18nKey = `contextTriggers.${key}`;
+        const translated = t(i18nKey, '');
+        if (translated && translated !== i18nKey) {
+            return translated;
+        }
+    }
+
+    if (key in KEY_TO_LEGACY_CONTEXT) {
+        return KEY_TO_LEGACY_CONTEXT[key as ContextTriggerKey];
+    }
+    // Already a Norwegian legacy value
+    if (key in LEGACY_CONTEXT_TRIGGER_MAP) {
+        return key;
+    }
+    return key;
+}
+
+/**
+ * Get display label for a strategy key
+ * Optionally uses i18n translation function if provided
+ */
+export function getStrategyLabel(key: string, t?: TranslationFunction): string {
+    // Try i18n key if translation function provided
+    if (t && typeof t === 'function') {
+        const i18nKey = `strategies.${key}`;
+        const translated = t(i18nKey, '');
+        if (translated && translated !== i18nKey) {
+            return translated;
+        }
+    }
+
+    if (key in KEY_TO_LEGACY_STRATEGY) {
+        return KEY_TO_LEGACY_STRATEGY[key as StrategyKey];
+    }
+    // Already a Norwegian legacy value
+    if (key in LEGACY_STRATEGY_MAP) {
+        return key;
+    }
+    return key;
+}
+
+/**
+ * Get display label for a warning sign key
+ * Optionally uses i18n translation function if provided
+ */
+export function getWarningSignLabel(key: string, t?: TranslationFunction): string {
+    // Try i18n key if translation function provided
+    if (t && typeof t === 'function') {
+        const i18nKey = `warningSigns.${key}`;
+        const translated = t(i18nKey, '');
+        if (translated && translated !== i18nKey) {
+            return translated;
+        }
+    }
+
+    if (key in KEY_TO_LEGACY_WARNING) {
+        return KEY_TO_LEGACY_WARNING[key as WarningSignKey];
+    }
+    // Already a Norwegian legacy value
+    if (key in LEGACY_WARNING_SIGN_MAP) {
+        return key;
+    }
+    return key;
+}

@@ -5,6 +5,7 @@
 import type {
     LogEntry,
     CrisisEvent,
+    CrisisReflection,
     ScheduleEntry,
     Goal,
     GoalProgress,
@@ -30,6 +31,7 @@ export interface LogsContextType {
 
 export interface CrisisContextType {
     crisisEvents: CrisisEvent[];
+    crisisReflections: CrisisReflection[];
     addCrisisEvent: (event: Omit<CrisisEvent, 'dayOfWeek' | 'timeOfDay' | 'hourOfDay'>) => boolean;
     updateCrisisEvent: (id: string, updates: Partial<CrisisEvent>) => void;
     deleteCrisisEvent: (id: string) => void;
@@ -38,6 +40,8 @@ export interface CrisisContextType {
     getCrisisCountByType: () => Record<string, number>;
     getCrisisEventsByContext: (context: ContextType) => CrisisEvent[];
     updateCrisisRecoveryTime: (id: string, recoveryMinutes: number) => void;
+    addCrisisReflection: (reflection: Omit<CrisisReflection, 'id' | 'timestamp'>) => void;
+    getReflectionForCrisis: (crisisId: string) => CrisisReflection | undefined;
 }
 
 export interface ScheduleContextType {
@@ -75,8 +79,22 @@ export interface ChildProfileContextType {
     clearChildProfile: () => void;
 }
 
+/**
+ * User-configurable analysis settings
+ */
+export interface AnalysisSettings {
+    /** Recency decay half-life in days (3-21, default 7) - lower = recent data matters more */
+    recencyDecayHalfLife: number;
+}
+
+export const DEFAULT_ANALYSIS_SETTINGS: AnalysisSettings = {
+    recencyDecayHalfLife: 7,
+};
+
 export interface SettingsContextType {
     hasCompletedOnboarding: boolean;
     completeOnboarding: () => void;
     refreshData: () => void;
+    analysisSettings: AnalysisSettings;
+    updateAnalysisSettings: (settings: Partial<AnalysisSettings>) => void;
 }
