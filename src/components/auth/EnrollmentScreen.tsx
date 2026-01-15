@@ -1,13 +1,12 @@
 /**
  * Enrollment Screen Component
- * First-time setup for biometric + QR enrollment
+ * First-time setup for biometric enrollment (QR disabled)
  */
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield,
-  QrCode,
   Fingerprint,
   CheckCircle,
   ChevronRight,
@@ -15,12 +14,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
-type EnrollmentStep = 'welcome' | 'qr' | 'biometric' | 'complete';
+type EnrollmentStep = 'welcome' | 'biometric' | 'complete';
 
 export const EnrollmentScreen: React.FC = () => {
-  const { enrollQR, enrollBiometric, completeEnrollment, biometricCapability } = useAuth();
+  const { enrollBiometric, completeEnrollment, biometricCapability } = useAuth();
   const [step, setStep] = useState<EnrollmentStep>('welcome');
-  const [qrInput, setQrInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,26 +33,6 @@ export const EnrollmentScreen: React.FC = () => {
     }
   }, [step, completeEnrollment]);
 
-  const handleQrSubmit = async () => {
-    if (!qrInput.trim()) {
-      setError('Please enter QR code data');
-      return;
-    }
-
-    setIsProcessing(true);
-    setError(null);
-
-    const result = await enrollQR(qrInput.trim());
-
-    if (result.success) {
-      setStep('biometric');
-    } else {
-      setError(result.error?.message || 'Invalid QR code');
-    }
-
-    setIsProcessing(false);
-  };
-
   const handleBiometricSetup = async () => {
     setIsProcessing(true);
     setError(null);
@@ -65,41 +43,6 @@ export const EnrollmentScreen: React.FC = () => {
       setStep('complete');
     } else {
       setError(result.errorMessage || 'Biometric setup failed');
-    }
-
-    setIsProcessing(false);
-  };
-
-  const handleSkipBiometric = () => {
-    setStep('complete');
-  };
-
-  // Dev mode: Skip QR with mock enrollment
-  const handleSkipQR = async () => {
-    setIsProcessing(true);
-    setError(null);
-
-    // Create a mock QR payload for development
-    const mockQRPayload = JSON.stringify({
-      version: '1.0.0',
-      deviceKey: 'DEV_MODE_SKIP_KEY_' + btoa(String(Date.now())).slice(0, 32),
-      pgpPublicKey: '-----BEGIN PGP PUBLIC KEY BLOCK-----\nDEV_MODE_PLACEHOLDER\n-----END PGP PUBLIC KEY BLOCK-----',
-      issuedAt: new Date().toISOString(),
-      permissions: {
-        canExport: true,
-        canDeleteData: true,
-        canModifyProfile: true,
-      },
-    });
-
-    const result = await enrollQR(mockQRPayload);
-
-    if (result.success) {
-      setStep('biometric');
-    } else {
-      // If mock enrollment fails, just skip anyway for dev
-      console.warn('[Dev] Mock QR enrollment failed, skipping anyway:', result.error);
-      setStep('biometric');
     }
 
     setIsProcessing(false);
@@ -126,93 +69,28 @@ export const EnrollmentScreen: React.FC = () => {
             </h1>
 
             <p className="text-slate-400 text-sm text-center mb-8">
-              NeuroLogg Pro uses biometric authentication and QR codes to keep
+              NeuroLogg Pro uses biometric authentication to keep
               your child's data safe and private.
             </p>
 
             <div className="space-y-4 w-full mb-8">
               <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-xl">
-                <QrCode className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-white text-sm font-medium">QR Code</p>
-                  <p className="text-slate-400 text-xs">
-                    Scan your unique QR code to link this device
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-xl">
                 <Fingerprint className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-white text-sm font-medium">Biometric</p>
+                  <p className="text-white text-sm font-medium">Biometric Unlock</p>
                   <p className="text-slate-400 text-xs">
-                    Use fingerprint or face to unlock quickly
+                    Use fingerprint or face to unlock quickly and securely
                   </p>
                 </div>
               </div>
             </div>
 
             <button
-              onClick={() => setStep('qr')}
+              onClick={() => setStep('biometric')}
               className="w-full py-4 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 hover:from-cyan-500/30 hover:to-purple-500/30 border border-white/10 rounded-xl text-white font-medium flex items-center justify-center gap-2 transition-colors"
             >
               <span>Get Started</span>
               <ChevronRight className="w-5 h-5" />
-            </button>
-          </motion.div>
-        )}
-
-        {/* QR Step */}
-        {step === 'qr' && (
-          <motion.div
-            key="qr"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="flex flex-col items-center max-w-sm w-full"
-          >
-            <div className="w-20 h-20 rounded-2xl bg-purple-500/20 flex items-center justify-center mb-6">
-              <QrCode className="w-10 h-10 text-purple-400" />
-            </div>
-
-            <h2 className="text-xl font-semibold text-white mb-2">
-              Scan QR Code
-            </h2>
-
-            <p className="text-slate-400 text-sm text-center mb-6">
-              Scan the QR code provided by your administrator, or paste the QR
-              data below.
-            </p>
-
-            {error && (
-              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-2 w-full">
-                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                <p className="text-red-400 text-sm">{error}</p>
-              </div>
-            )}
-
-            <textarea
-              value={qrInput}
-              onChange={(e) => setQrInput(e.target.value)}
-              placeholder='{"version":"1.0.0","deviceKey":"..."}'
-              className="w-full h-32 bg-slate-800/50 border border-white/10 rounded-xl p-4 text-white text-sm font-mono placeholder:text-slate-600 focus:outline-none focus:border-purple-400/50 mb-4"
-            />
-
-            <button
-              onClick={handleQrSubmit}
-              disabled={isProcessing || !qrInput.trim()}
-              className="w-full py-4 bg-purple-500/20 hover:bg-purple-500/30 disabled:bg-slate-800/50 disabled:text-slate-600 border border-purple-500/30 disabled:border-slate-700 rounded-xl text-purple-400 font-medium transition-colors"
-            >
-              {isProcessing ? 'Validating...' : 'Continue'}
-            </button>
-
-            {/* Development skip button */}
-            <button
-              onClick={handleSkipQR}
-              disabled={isProcessing}
-              className="w-full py-3 mt-3 text-slate-500 hover:text-slate-400 text-sm transition-colors border border-dashed border-slate-700 rounded-xl"
-            >
-              Skip QR (Dev Mode)
             </button>
           </motion.div>
         )}
@@ -252,17 +130,9 @@ export const EnrollmentScreen: React.FC = () => {
             <button
               onClick={handleBiometricSetup}
               disabled={isProcessing}
-              className="w-full py-4 bg-cyan-500/20 hover:bg-cyan-500/30 disabled:bg-slate-800/50 border border-cyan-500/30 rounded-xl text-cyan-400 font-medium transition-colors mb-3"
+              className="w-full py-4 bg-cyan-500/20 hover:bg-cyan-500/30 disabled:bg-slate-800/50 border border-cyan-500/30 rounded-xl text-cyan-400 font-medium transition-colors"
             >
               {isProcessing ? 'Setting Up...' : 'Enable Biometric'}
-            </button>
-
-            <button
-              onClick={handleSkipBiometric}
-              disabled={isProcessing}
-              className="w-full py-3 text-slate-500 hover:text-slate-400 text-sm transition-colors"
-            >
-              Skip for now
             </button>
           </motion.div>
         )}
@@ -288,18 +158,17 @@ export const EnrollmentScreen: React.FC = () => {
             <h2 className="text-xl font-semibold text-white mb-2">All Set!</h2>
 
             <p className="text-slate-400 text-sm text-center mb-8">
-              Your device is now enrolled. Your data will be encrypted and
-              protected.
+              Biometric authentication is now enabled. Your data is protected.
             </p>
 
             <div className="space-y-2 w-full mb-8">
               <div className="flex items-center gap-2 text-green-400/70 text-sm">
                 <CheckCircle className="w-4 h-4" />
-                <span>QR code enrolled</span>
+                <span>Biometric unlock enabled</span>
               </div>
               <div className="flex items-center gap-2 text-green-400/70 text-sm">
                 <CheckCircle className="w-4 h-4" />
-                <span>Data encryption enabled</span>
+                <span>Data protection active</span>
               </div>
             </div>
 

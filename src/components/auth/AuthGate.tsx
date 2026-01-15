@@ -1,13 +1,12 @@
 /**
  * AuthGate Component
- * Blocks app content until user is authenticated
+ * Blocks app content until user is authenticated (biometric only)
  */
 
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { LockScreen } from './LockScreen';
 import { BiometricPrompt } from './BiometricPrompt';
-import { QRScanScreen } from './QRScanScreen';
 import { AuthErrorScreen } from './AuthErrorScreen';
 import { EnrollmentScreen } from './EnrollmentScreen';
 import { LoadingScreen } from './LoadingScreen';
@@ -27,7 +26,7 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
       return <LoadingScreen message="Initializing security..." />;
 
     case 'enrolling':
-      // First-time enrollment in progress
+      // First-time biometric enrollment
       return <EnrollmentScreen />;
 
     case 'locked':
@@ -37,7 +36,8 @@ export const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
       return <BiometricPrompt />;
 
     case 'qrPending':
-      return <QRScanScreen />;
+      // QR auth disabled - treat as biometric pending
+      return <BiometricPrompt />;
 
     case 'error':
       return <AuthErrorScreen />;

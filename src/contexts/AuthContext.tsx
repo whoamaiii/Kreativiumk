@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 /**
  * Authentication Context
- * Manages biometric + QR unlock state machine
+ * Manages biometric-only unlock state machine
  */
 
 import React, {
@@ -10,7 +10,6 @@ import React, {
   useState,
   useCallback,
   useEffect,
-  useRef,
 } from 'react';
 import { App } from '@capacitor/app';
 
@@ -21,19 +20,6 @@ import {
   getBiometricCapability,
   authenticateWithBiometric,
 } from '../services/biometricAuth';
-import {
-  parseQrPayload,
-  validateQrKeyMatch,
-  getKeyFingerprint,
-  type QRPayload,
-} from '../utils/qrPayloadSchema';
-import {
-  deriveStorageKey,
-  generateDeviceSalt,
-  sha256,
-  uint8ArrayToBase64,
-  base64ToUint8Array,
-} from '../services/crypto';
 
 import type {
   AuthState,
@@ -75,31 +61,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const [error, setError] = useState<AuthError | null>(null);
   const [biometricCapability, setBiometricCapability] = useState<BiometricCapability | null>(null);
   const [session, setSession] = useState<AuthSession | null>(null);
-  const [qrTTLRemaining, setQrTTLRemaining] = useState(0);
+  const [qrTTLRemaining] = useState(0); // Kept for interface compatibility
 
   // Enrollment state
   const [biometricCredential, setBiometricCredential] = useState<BiometricCredential | null>(null);
   const [qrEnrollment, setQrEnrollment] = useState<QREnrollment | null>(null);
 
-  // Encryption key (only available when unlocked)
-  const encryptionKeyRef = useRef<CryptoKey | null>(null);
-  const deviceSaltRef = useRef<Uint8Array | null>(null);
-
-  // TTL timer
-  const ttlTimerRef = useRef<NodeJS.Timeout | null>(null);
-
   // ============================================
   // STORAGE HELPERS (defined first - no dependencies)
   // ============================================
-
-  const loadQrEnrollment = (): QREnrollment | null => {
-    try {
-      const saved = localStorage.getItem(AUTH_STORAGE_KEYS.QR_ENROLLMENT);
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  };
 
   const loadBiometricCredential = (): BiometricCredential | null => {
     try {
@@ -109,36 +79,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       return null;
     }
   };
-
-  const loadDeviceSalt = (): Uint8Array | null => {
-    try {
-      const saved = localStorage.getItem(AUTH_STORAGE_KEYS.DEVICE_SALT);
-      return saved ? base64ToUint8Array(saved) : null;
-    } catch {
-      return null;
-    }
-  };
-
-  // ============================================
-  // KEY DERIVATION (must be defined before validateQR/enrollQR)
-  // ============================================
-
-  const deriveAndStoreKey = useCallback(async (payload: QRPayload): Promise<void> => {
-    // Ensure we have device salt
-    if (!deviceSaltRef.current) {
-      deviceSaltRef.current = generateDeviceSalt();
-      localStorage.setItem(
-        AUTH_STORAGE_KEYS.DEVICE_SALT,
-        uint8ArrayToBase64(deviceSaltRef.current)
-      );
-    }
-
-    // Derive storage key
-    encryptionKeyRef.current = await deriveStorageKey(
-      payload.deviceKey,
-      deviceSaltRef.current
-    );
-  }, []);
 
   // ============================================
   // FINALIZE UNLOCK (must be defined before requestBiometric/validateQR)
@@ -150,9 +90,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       id: crypto.randomUUID(),
       startedAt: new Date().toISOString(),
       lastActivity: new Date().toISOString(),
-      authMethod: 'combined',
+      authMethod: 'biometric',
       biometricValidatedAt: new Date().toISOString(),
-      qrValidatedAt: new Date().toISOString(),
     };
     setSession(newSession);
 
@@ -175,21 +114,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       const capability = await getBiometricCapability();
       setBiometricCapability(capability);
 
-      // Load enrollment state from storage
-      const savedQrEnrollment = loadQrEnrollment();
-      setQrEnrollment(savedQrEnrollment);
-
+      // Load biometric enrollment state from storage
       const savedBiometricCredential = loadBiometricCredential();
       setBiometricCredential(savedBiometricCredential);
 
-      // Load device salt
-      deviceSaltRef.current = loadDeviceSalt();
-
-      // Check if enrolled
-      const isEnrolled = savedQrEnrollment !== null;
+      // Check if enrolled (biometric-only)
+      const isEnrolled = savedBiometricCredential !== null;
 
       if (!isEnrolled) {
-        // First time - need enrollment
+        // First time - need biometric enrollment
         setState('enrolling');
         return;
       }
@@ -220,34 +153,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   }, [bypassAuth, initializeAuth]);
 
   // ============================================
-  // QR TTL MANAGEMENT
-  // ============================================
-
-  const checkQrTTL = useCallback((): boolean => {
-    const lastQrValidation = localStorage.getItem(AUTH_STORAGE_KEYS.LAST_QR_VALIDATION);
-    if (!lastQrValidation) {
-      return true; // No QR validation - expired
-    }
-
-    try {
-      const { validatedAt } = JSON.parse(lastQrValidation);
-      const validatedTime = new Date(validatedAt).getTime();
-      const expiresAt = validatedTime + AUTH_CONFIG.QR_TTL_MINUTES * 60 * 1000;
-      const now = Date.now();
-
-      if (now >= expiresAt) {
-        return true; // Expired
-      }
-
-      // Update remaining time
-      setQrTTLRemaining(Math.floor((expiresAt - now) / 1000));
-      return false; // Still valid
-    } catch {
-      return true; // Error parsing - treat as expired
-    }
-  }, []);
-
-  // ============================================
   // APP STATE HANDLING
   // ============================================
 
@@ -260,13 +165,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     const setupListener = async () => {
       listenerHandle = await App.addListener('appStateChange', ({ isActive }) => {
         if (!isActive && AUTH_CONFIG.LOCK_ON_BACKGROUND && state === 'unlocked') {
-          // App went to background - lock after grace period
-          // For now, we'll require auth on resume regardless
-        }
-
-        if (isActive && state === 'unlocked') {
-          // App resumed - check if QR TTL expired
-          checkQrTTL();
+          // App went to background - could lock here if desired
         }
       });
     };
@@ -278,33 +177,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         listenerHandle.remove();
       }
     };
-  }, [state, bypassAuth, checkQrTTL]);
-
-  // Start TTL countdown timer when unlocked
-  useEffect(() => {
-    if (state !== 'unlocked') {
-      if (ttlTimerRef.current) {
-        clearInterval(ttlTimerRef.current);
-        ttlTimerRef.current = null;
-      }
-      return;
-    }
-
-    // Update TTL every second
-    ttlTimerRef.current = setInterval(() => {
-      const expired = checkQrTTL();
-      if (expired) {
-        // QR expired - need to re-authenticate
-        setState('qrPending');
-      }
-    }, 1000);
-
-    return () => {
-      if (ttlTimerRef.current) {
-        clearInterval(ttlTimerRef.current);
-      }
-    };
-  }, [state, checkQrTTL]);
+  }, [state, bypassAuth]);
 
   // ============================================
   // BIOMETRIC AUTHENTICATION
@@ -338,79 +211,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       return result;
     }
 
-    // Biometric succeeded - check QR TTL
-    const qrExpired = checkQrTTL();
-
-    if (qrExpired) {
-      setState('qrPending');
-    } else {
-      // Both checks passed - unlock
-      await finalizeUnlock();
-    }
+    // Biometric succeeded - unlock directly
+    await finalizeUnlock();
 
     return result;
-  }, [checkQrTTL, finalizeUnlock]);
+  }, [finalizeUnlock]);
 
   // ============================================
-  // QR VALIDATION
+  // QR VALIDATION (stub - QR auth disabled)
   // ============================================
 
-  const validateQR = useCallback(async (qrData: string): Promise<{
+  const validateQR = useCallback(async (_qrData: string): Promise<{
     success: boolean;
     error?: AuthError;
   }> => {
-    // Parse QR payload
-    const parseResult = parseQrPayload(qrData);
-    if (!parseResult.success) {
-      const authError: AuthError = {
-        code: parseResult.code,
-        message: parseResult.message,
-        recoverable: true,
-        timestamp: new Date().toISOString(),
-        details: parseResult.details,
-      };
-      setError(authError);
-      return { success: false, error: authError };
-    }
-
-    // Check if this QR matches enrolled device
-    if (qrEnrollment) {
-      const matchResult = await validateQrKeyMatch(
-        parseResult.payload,
-        qrEnrollment.keyHash
-      );
-
-      if (!matchResult.success) {
-        const authError: AuthError = {
-          code: matchResult.code,
-          message: matchResult.message,
-          recoverable: true,
-          timestamp: new Date().toISOString(),
-        };
-        setError(authError);
-        return { success: false, error: authError };
-      }
-    }
-
-    // Record QR validation
-    const validationState = {
-      validatedAt: new Date().toISOString(),
-      qrHash: await sha256(qrData),
-      expiresAt: new Date(Date.now() + AUTH_CONFIG.QR_TTL_MINUTES * 60 * 1000).toISOString(),
-    };
-    localStorage.setItem(
-      AUTH_STORAGE_KEYS.LAST_QR_VALIDATION,
-      JSON.stringify(validationState)
-    );
-
-    // Derive encryption key from QR
-    await deriveAndStoreKey(parseResult.payload);
-
-    // Unlock
-    await finalizeUnlock();
-
+    // QR authentication is disabled - biometric only
     return { success: true };
-  }, [qrEnrollment, deriveAndStoreKey, finalizeUnlock]);
+  }, []);
 
   // ============================================
   // ENROLLMENT
@@ -453,88 +270,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     return result;
   }, []);
 
-  const enrollQR = useCallback(async (qrData: string): Promise<{
+  const enrollQR = useCallback(async (_qrData: string): Promise<{
     success: boolean;
     error?: AuthError;
   }> => {
-    // Parse and validate QR
-    const parseResult = parseQrPayload(qrData);
-    if (!parseResult.success) {
-      const authError: AuthError = {
-        code: parseResult.code,
-        message: parseResult.message,
-        recoverable: true,
-        timestamp: new Date().toISOString(),
-        details: parseResult.details,
-      };
-      return { success: false, error: authError };
-    }
-
-    const payload = parseResult.payload;
-
-    // Generate device salt if not exists
-    if (!deviceSaltRef.current) {
-      deviceSaltRef.current = generateDeviceSalt();
-      localStorage.setItem(
-        AUTH_STORAGE_KEYS.DEVICE_SALT,
-        uint8ArrayToBase64(deviceSaltRef.current)
-      );
-    }
-
-    // Store enrollment
-    const keyHash = await sha256(payload.deviceKey);
-    const fingerprint = await getKeyFingerprint(payload.deviceKey);
-
-    const enrollment: QREnrollment = {
-      enrolledAt: new Date().toISOString(),
-      keyFingerprint: fingerprint,
-      keyHash,
-      permissions: payload.permissions,
-      pgpPublicKey: payload.pgpPublicKey,
-    };
-
-    localStorage.setItem(
-      AUTH_STORAGE_KEYS.QR_ENROLLMENT,
-      JSON.stringify(enrollment)
-    );
-    setQrEnrollment(enrollment);
-
-    // Record QR validation
-    const validationState = {
-      validatedAt: new Date().toISOString(),
-      qrHash: await sha256(qrData),
-      expiresAt: new Date(Date.now() + AUTH_CONFIG.QR_TTL_MINUTES * 60 * 1000).toISOString(),
-    };
-    localStorage.setItem(
-      AUTH_STORAGE_KEYS.LAST_QR_VALIDATION,
-      JSON.stringify(validationState)
-    );
-
-    // Derive encryption key
-    await deriveAndStoreKey(payload);
-
+    // QR enrollment is disabled - biometric only
     return { success: true };
-  }, [deriveAndStoreKey]);
+  }, []);
 
   const unenroll = useCallback(async (): Promise<void> => {
-    // Clear all auth storage
-    localStorage.removeItem(AUTH_STORAGE_KEYS.ENROLLMENT_STATUS);
+    // Clear biometric credential
     localStorage.removeItem(AUTH_STORAGE_KEYS.BIOMETRIC_CREDENTIAL);
-    localStorage.removeItem(AUTH_STORAGE_KEYS.QR_ENROLLMENT);
-    localStorage.removeItem(AUTH_STORAGE_KEYS.LAST_QR_VALIDATION);
-    localStorage.removeItem(AUTH_STORAGE_KEYS.DEVICE_SALT);
 
     // Clear state
     setBiometricCredential(null);
     setQrEnrollment(null);
-    encryptionKeyRef.current = null;
-    deviceSaltRef.current = null;
 
     setState('enrolling');
   }, []);
 
   const completeEnrollment = useCallback(async (): Promise<void> => {
-    // Called when enrollment flow is complete (QR enrolled, optionally biometric)
+    // Called when biometric enrollment is complete
     // Transition to unlocked state
     await finalizeUnlock();
   }, [finalizeUnlock]);
@@ -544,64 +300,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   // ============================================
 
   const lock = useCallback(() => {
-    // Clear sensitive data from memory
-    encryptionKeyRef.current = null;
     setSession(null);
-
-    // Don't clear device salt - needed for next unlock
-
     setState('locked');
   }, []);
 
   const clearError = useCallback(() => {
     setError(null);
-    // Return to appropriate state
-    if (qrEnrollment) {
+    // Return to biometric pending state
+    if (biometricCredential) {
       setState('biometricPending');
     } else {
-      setState('locked');
+      setState('enrolling');
     }
-  }, [qrEnrollment]);
+  }, [biometricCredential]);
 
   // Dev mode unlock - skip all auth checks
   const devModeUnlock = useCallback(() => {
     console.warn('[Auth] DEV MODE: Bypassing authentication');
     setError(null);
-
-    // Set a mock QR validation so TTL timer doesn't immediately expire
-    const mockValidation = {
-      validatedAt: new Date().toISOString(),
-      qrHash: 'DEV_MODE_MOCK_HASH',
-      expiresAt: new Date(Date.now() + AUTH_CONFIG.QR_TTL_MINUTES * 60 * 1000).toISOString(),
-    };
-    localStorage.setItem(AUTH_STORAGE_KEYS.LAST_QR_VALIDATION, JSON.stringify(mockValidation));
-
-    // Also set mock QR enrollment if not present (prevents re-enrollment loop)
-    if (!qrEnrollment) {
-      const mockEnrollment: QREnrollment = {
-        enrolledAt: new Date().toISOString(),
-        keyFingerprint: 'DEV_MODE',
-        keyHash: 'DEV_MODE_MOCK_KEY_HASH',
-        permissions: { canExport: true, canDeleteData: true, canModifyProfile: true },
-        pgpPublicKey: 'DEV_MODE_PLACEHOLDER',
-      };
-      localStorage.setItem(AUTH_STORAGE_KEYS.QR_ENROLLMENT, JSON.stringify(mockEnrollment));
-      setQrEnrollment(mockEnrollment);
-    }
-
     setState('unlocked');
-  }, [qrEnrollment]);
+  }, []);
 
   // ============================================
   // CONTEXT VALUE
   // ============================================
 
   const getEncryptionKey = useCallback((): CryptoKey | null => {
-    if (state !== 'unlocked') {
-      return null;
-    }
-    return encryptionKeyRef.current;
-  }, [state]);
+    // Encryption key is not used in biometric-only mode
+    return null;
+  }, []);
 
   const contextValue: AuthContextType = {
     state,

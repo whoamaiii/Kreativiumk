@@ -104,7 +104,8 @@ function LiquidLogoMesh({ isAnimating }: { isAnimating: boolean }) {
   const { size } = useThree();
 
   // Get actual aspect ratio from the loaded texture
-  const aspect = texture.image.width / texture.image.height;
+  const textureImage = texture.image as { width: number; height: number };
+  const aspect = textureImage.width / textureImage.height;
   
   // Use a fixed large size and let the camera frame it
   // This ensures consistent sizing regardless of canvas size
